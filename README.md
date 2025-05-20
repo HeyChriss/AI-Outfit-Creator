@@ -68,11 +68,18 @@ The primary audience for DrippedUp is individuals aged 18-45 who are interested 
     cd backend
     pip install -r requirements.txt # or equivalent for your backend framework
     ```
-4.  Set up the database:
+4.  **Download the model weights:**
+    - Download the model weights file from [this Google Drive link](https://drive.google.com/file/d/1DfK51Fbcj2SvLx2ruIRP0DeVpPQP2bdg/view?usp=sharing).
+    - Place the downloaded weights file (e.g., `model.keras`) in the `backend` directory or your preferred location.
+5.  **Configure environment variables:**
+    - Create a `.env` file in the `backend` directory (if it doesn't exist).
+    - Add the following line to your `.env` file, updating the path if you placed the weights elsewhere:
+      ```env
+      MODEL_WEIGHTS_PATH=backend/model.keras
+      ```
+6.  Set up the database:
     * [Provide specific instructions for setting up your chosen database (e.g., AWS configuration, MongoDB Atlas setup).]
-5.  Configure environment variables:
-    * Create `.env` files in both the `frontend` and `backend` directories based on the `.env.example` files (if applicable). Include API keys, database connection strings, etc.
-6.  Run the development servers:
+7.  Run the development servers:
     ```bash
     # For the front-end
     cd frontend
@@ -93,27 +100,41 @@ The primary audience for DrippedUp is individuals aged 18-45 who are interested 
 
 ## Project Structure
 
+```text
 DrippedUp/
-├── frontend/                # React front-end application
-│   ├── public/
+├── drippedup/
+│   ├── backend/
+│   │   ├── requirements.txt
+│   │   ├── model_loader.py
+│   │   ├── model.keras
+│   │   ├── shirt.webp
+│   │   └── drippedupenv/         # Python virtual environment (not needed in version control)
 │   ├── src/
+│   │   ├── App.css
+│   │   ├── NewItem.tsx
+│   │   ├── Footer.tsx
+│   │   ├── Header.tsx
+│   │   ├── App.tsx
+│   │   ├── index.css
+│   │   ├── supabaseClient.js
+│   │   ├── vite-env.d.ts
+│   │   ├── main.tsx
+│   │   └── assets/
+│   ├── public/
+│   │   └── vite.svg
+│   ├── .gitignore
+│   ├── package-lock.json
 │   ├── package.json
-│   └── ...
-├── backend/                 # [Your Backend Framework] back-end application
-│   ├── app.py               # or equivalent entry point
-│   ├── models/
-│   ├── routes/
-│   ├── requirements.txt     # or equivalent dependency file
-│   └── ...
-├── ml_model/                # Files related to the machine learning model
-│   ├── notebooks/           # Optional: Jupyter notebooks for experimentation
-│   ├── model_scripts/       # Scripts for fine-tuning and integration
-│   ├── data/                # Sample data for testing
-│   └── ...
-├── database/                # Optional: Database setup scripts or documentation
-├── .gitignore
-├── README.md
-└── LICENSE
+│   ├── vite.config.ts
+│   ├── tsconfig.node.json
+│   ├── tsconfig.json
+│   ├── tsconfig.app.json
+│   ├── index.html
+│   ├── eslint.config.js
+│   └── README.md
+├── LICENSE
+└── README.md
+```
 
 ## Team Members
 
