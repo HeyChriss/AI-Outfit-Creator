@@ -26,3 +26,7 @@ dist-ssr
 .env.local
 
 /node_modules
+
+model.keras
+.env
+/backend/drippedupenv
