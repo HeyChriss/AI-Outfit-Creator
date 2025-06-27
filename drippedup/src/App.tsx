@@ -3,7 +3,7 @@ import React, { useState } from 'react'
 import './App.css'
 import Footer from './components/layout/Footer'
 import Header from './components/layout/Header'
-import NewItem from './components/pages/NewItem'
+import NewItem from './components/pages/newItem/NewItem'
 import AboutUs from './components/pages/AboutUs'  // Add this import
 import LoginPage from './components/auth/LoginPage'
 import SignUpPage from './components/auth/SignUpPage'
