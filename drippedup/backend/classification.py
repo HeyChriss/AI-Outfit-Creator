@@ -159,7 +159,7 @@ class ClothingClassifier:
             return results
             
         except Exception as e:
-            logger.error(f"Error making prediction on {img_path}: {e}")
+            logger.error(f"Error making prediction on {img_array}: {e}")
             raise
     
     def get_model_info(self) -> Dict:

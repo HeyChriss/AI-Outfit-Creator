@@ -1,4 +1,4 @@
-from fastapi import FastAPI, File, UploadFile, HTTPException
+from fastapi import FastAPI, File, UploadFile, HTTPException, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 import uvicorn
@@ -9,6 +9,8 @@ import logging
 from classification import ClothingClassifier
 from PIL import Image
 import numpy as np
+from storage import save_item
+import json
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -164,7 +166,18 @@ async def get_model_info():
     
     return classifier.get_model_info()
 
-
+@app.post("/save-item")
+async def save_item_endpoint(
+    file: UploadFile = File(...),
+    clothing_type: str = Form(...),
+    details: str = Form(None)
+):
+    """
+    Save uploaded image and details to a subfolder in the images directory based on clothing type.
+    """
+    details_dict = json.loads(details) if details else {}
+    # Use the abstracted save_item function
+    return save_item(file, clothing_type, details_dict)
 
 # Error handlers
 # Converts errors to consistent JSON responses with the appropriate status code

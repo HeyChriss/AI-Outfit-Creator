@@ -3,7 +3,7 @@ import { useState } from 'react';
 interface UseSaveItemReturn {
   isUploading: boolean;
   uploadSuccess: boolean;
-  saveItem: () => Promise<void>;
+  saveItem: (imageFile: File, clothingType: string, details: object) => Promise<void>;
   resetSaveState: () => void;
 }
 
@@ -11,22 +11,29 @@ export const useSaveItem = (onSuccess?: () => void): UseSaveItemReturn => {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadSuccess, setUploadSuccess] = useState(false);
 
-  const saveItem = async () => {
+  const saveItem = async (imageFile: File, clothingType: string, details: object) => {
     setIsUploading(true);
-    
     try {
-      // Simulate upload process - replace with actual API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
+      const formData = new FormData();
+      formData.append('file', imageFile);
+      formData.append('clothing_type', clothingType);
+      formData.append('details', JSON.stringify(details));
+
+      const response = await fetch('http://localhost:8000/save-item', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save item');
+      }
+
       setUploadSuccess(true);
-      
-      // Auto redirect after 2 seconds
       setTimeout(() => {
         if (onSuccess) {
           onSuccess();
         }
       }, 2000);
-      
     } catch (error) {
       console.error('Error saving item:', error);
     } finally {
