@@ -124,30 +124,7 @@ class ClothingClassifier:
             logger.error(f"Error initializing model: {e}")
             raise
     
-    def preprocess_image(self, img_path: str) -> np.ndarray:
-        """
-        Preprocess an image for model prediction.
-        
-        Args:
-            img_path (str): Path to the image file.
-            
-        Returns:
-            np.ndarray: Preprocessed image array.
-        """
-        try:
-            # Load and preprocess the image
-            img = image.load_img(img_path, target_size=(self.image_size, self.image_size))
-            img_array = image.img_to_array(img)
-            img_array = img_array / 255.0  # Normalize
-            img_array = np.expand_dims(img_array, axis=0)  # Add batch dimension
-            
-            return img_array
-            
-        except Exception as e:
-            logger.error(f"Error preprocessing image {img_path}: {e}")
-            raise
-    
-    def predict(self, img_path: str) -> Dict:
+    def predict(self, img_array: np.ndarray) -> Dict:
         """
         Make predictions on an image.
         
@@ -161,8 +138,6 @@ class ClothingClassifier:
             raise ValueError("Model not initialized")
         
         try:
-            # Preprocess the image
-            img_array = self.preprocess_image(img_path)
             
             # Get prediction
             prediction = self.model.predict(img_array, verbose=0)
@@ -186,33 +161,6 @@ class ClothingClassifier:
         except Exception as e:
             logger.error(f"Error making prediction on {img_path}: {e}")
             raise
-    
-    def predict_batch(self, img_paths: List[str], top_k: int = 3) -> List[Dict]:
-        """
-        Make predictions on multiple images.
-        
-        Args:
-            img_paths (List[str]): List of paths to image files.
-            top_k (int): Number of top predictions to return for each image.
-            
-        Returns:
-            List[Dict]: List of prediction results for each image.
-        """
-        results = []
-        
-        for img_path in img_paths:
-            try:
-                result = self.predict(img_path)
-                result["image_path"] = img_path
-                results.append(result)
-            except Exception as e:
-                logger.error(f"Error processing {img_path}: {e}")
-                results.append({
-                    "image_path": img_path,
-                    "error": str(e)
-                })
-        
-        return results
     
     def get_model_info(self) -> Dict:
         """
