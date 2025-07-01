@@ -12,9 +12,10 @@ interface UseImageUploadReturn {
   triggerFileSelect: () => void;
 }
 
-export const useImageUpload = (onImageSelected?: (file: File) => void): UseImageUploadReturn => {
+export const useImageUpload = (onImageSelected?: (file: File) => void): UseImageUploadReturn & { selectedFile: File | null } => {
   const [image, setImage] = useState<string | null>(null);
   const [dragActive, setDragActive] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const validateFile = (file: File): string | null => {
@@ -35,7 +36,7 @@ export const useImageUpload = (onImageSelected?: (file: File) => void): UseImage
       console.error(error);
       return;
     }
-
+    setSelectedFile(file);
     const reader = new FileReader();
     reader.onloadend = () => {
       setImage(reader.result as string);
@@ -80,6 +81,7 @@ export const useImageUpload = (onImageSelected?: (file: File) => void): UseImage
 
   const handleReset = () => {
     setImage(null);
+    setSelectedFile(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -98,5 +100,6 @@ export const useImageUpload = (onImageSelected?: (file: File) => void): UseImage
     handleDrop,
     handleReset,
     triggerFileSelect,
+    selectedFile,
   };
 }; 

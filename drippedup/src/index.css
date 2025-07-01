@@ -24,11 +24,38 @@ a:hover {
 
 body {
   margin: 0;
-  display: flex;
-  place-items: center;
   min-width: 320px;
   min-height: 100vh;
   background: #fff;
+}
+
+/* Auth pages background */
+body.auth-page {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 25%, #5b73e8 50%, #8e44ad 75%, #9b59b6 100%);
+  background-size: 400% 400%;
+  animation: gradientShift 15s ease infinite;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 2rem 1rem;
+}
+
+/* Mobile responsive for auth pages */
+@media (max-width: 768px) {
+  body.auth-page {
+    padding: 1rem;
+  }
+  body.auth-page > div > div{
+    width: auto !important;
+    max-width: 350px;
+  }
+}
+
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
 h1 {

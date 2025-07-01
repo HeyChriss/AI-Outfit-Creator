@@ -21,9 +21,12 @@ import { useNewItemStyles } from './hooks/useNewItemStyles';
 
 interface NewItemProps {
   onBackToDashboard: () => void;
+  onLoginClick: () => void;
+  onAboutUsClick?: () => void;
+  onLogoClick?: () => void;
 }
 
-const NewItem: React.FC<NewItemProps> = ({ onBackToDashboard }) => {
+const NewItem: React.FC<NewItemProps> = ({ onBackToDashboard, onLoginClick, onAboutUsClick, onLogoClick }) => {
   // Custom hooks for state management
   const { isMobile, isTablet } = useScreenSize();
   
@@ -39,7 +42,8 @@ const NewItem: React.FC<NewItemProps> = ({ onBackToDashboard }) => {
     handleDrag, 
     handleDrop, 
     handleReset: resetImage,
-    triggerFileSelect 
+    triggerFileSelect, 
+    selectedFile
   } = useImageUpload(predictCategory);
   
   const { isUploading, uploadSuccess, saveItem, resetSaveState } = useSaveItem(onBackToDashboard);
@@ -57,12 +61,13 @@ const NewItem: React.FC<NewItemProps> = ({ onBackToDashboard }) => {
 
   // Handle save
   const handleSave = () => {
-    saveItem();
+    if (!selectedFile) return;
+    saveItem(selectedFile, itemDetails.category, itemDetails);
   };
 
   return (
     <>
-      <Header onLoginClick={() => {}} />
+              <Header onLoginClick={onLoginClick} onAboutUsClick={onAboutUsClick} onLogoClick={onLogoClick} />
       <main style={{
         marginTop: '120px',
         marginBottom: '120px',
@@ -208,16 +213,16 @@ const NewItem: React.FC<NewItemProps> = ({ onBackToDashboard }) => {
                     </button>
                     <button 
                       onClick={handleSave}
-                      disabled={isUploading}
+                      disabled={!selectedFile || isUploading}
                       style={{...styles.actionButton, ...styles.saveButton}}
                       onMouseEnter={(e) => {
-                        if (!isUploading) {
+                        if (!selectedFile || !isUploading) {
                           e.currentTarget.style.transform = 'translateY(-2px)';
                           e.currentTarget.style.boxShadow = '0 8px 25px rgba(16, 185, 129, 0.4)';
                         }
                       }}
                       onMouseLeave={(e) => {
-                        if (!isUploading) {
+                        if (!selectedFile || !isUploading) {
                           e.currentTarget.style.transform = 'translateY(0)';
                           e.currentTarget.style.boxShadow = '0 4px 15px rgba(16, 185, 129, 0.3)';
                         }
