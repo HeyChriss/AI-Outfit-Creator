@@ -167,6 +167,7 @@ async def get_model_info():
 
 
 # Error handlers
+# Converts errors to consistent JSON responses with the appropriate status code
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request, exc):
     return JSONResponse(
@@ -174,6 +175,8 @@ async def http_exception_handler(request, exc):
         content={"error": exc.detail}
     )
 
+# Returns a generic 500 Internal Server Error response to the clien
+# might no be needed but still good to have 
 @app.exception_handler(Exception)
 async def general_exception_handler(request, exc):
     logger.error(f"Unhandled exception: {exc}")

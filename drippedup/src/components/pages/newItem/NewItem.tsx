@@ -21,9 +21,12 @@ import { useNewItemStyles } from './hooks/useNewItemStyles';
 
 interface NewItemProps {
   onBackToDashboard: () => void;
+  onLoginClick: () => void;
+  onAboutUsClick?: () => void;
+  onLogoClick?: () => void;
 }
 
-const NewItem: React.FC<NewItemProps> = ({ onBackToDashboard }) => {
+const NewItem: React.FC<NewItemProps> = ({ onBackToDashboard, onLoginClick, onAboutUsClick, onLogoClick }) => {
   // Custom hooks for state management
   const { isMobile, isTablet } = useScreenSize();
   
@@ -62,7 +65,7 @@ const NewItem: React.FC<NewItemProps> = ({ onBackToDashboard }) => {
 
   return (
     <>
-      <Header onLoginClick={() => {}} />
+              <Header onLoginClick={onLoginClick} onAboutUsClick={onAboutUsClick} onLogoClick={onLogoClick} />
       <main style={{
         marginTop: '120px',
         marginBottom: '120px',

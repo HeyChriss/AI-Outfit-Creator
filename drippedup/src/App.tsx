@@ -4,7 +4,7 @@ import './App.css'
 import Footer from './components/layout/Footer'
 import Header from './components/layout/Header'
 import NewItem from './components/pages/newItem/NewItem'
-import AboutUs from './components/pages/AboutUs'  // Add this import
+import AboutUs from './components/pages/AboutUs'  
 import LoginPage from './components/auth/LoginPage'
 import SignUpPage from './components/auth/SignUpPage'
 import LandingPage from './components/layout/LandingPage'
@@ -82,7 +82,14 @@ function App() {
 
   // Handle different views based on currentView state
   if (currentView === 'newItem') {
-    return <NewItem onBackToDashboard={() => setCurrentView('dashboard')} />;
+    return (
+      <NewItem 
+        onBackToDashboard={() => setCurrentView('dashboard')}
+        onLoginClick={() => setAuthView('login')}
+        onAboutUsClick={() => setCurrentView('aboutUs')}
+        onLogoClick={() => setCurrentView('landing')}
+      />
+    );
   }
 
   if (currentView === 'aboutUs') {
@@ -90,6 +97,8 @@ function App() {
       <AboutUs 
         onBackToDashboard={user ? () => setCurrentView('dashboard') : undefined}
         onLoginClick={() => setAuthView('login')}
+        onAboutUsClick={() => setCurrentView('aboutUs')}
+        onLogoClick={() => setCurrentView('landing')}
       />
     );
   }
@@ -101,6 +110,7 @@ function App() {
         <Header 
           onLoginClick={() => setAuthView('login')}
           onAboutUsClick={() => setCurrentView('aboutUs')}
+          onLogoClick={() => setCurrentView('landing')}
         />
         <main
           style={{
@@ -127,6 +137,7 @@ function App() {
       <Header 
         onLoginClick={() => setAuthView('login')}
         onAboutUsClick={() => setCurrentView('aboutUs')}
+        onLogoClick={() => setCurrentView('landing')}
       />
       <main
         style={{

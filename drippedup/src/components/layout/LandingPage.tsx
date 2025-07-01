@@ -4,7 +4,7 @@ import { Camera, Palette, TrendingUp, Users, Heart, Target } from 'lucide-react'
 interface LandingPageProps {
   onLoginClick: () => void;
   onSignUpClick: () => void;
-  onAboutUsClick?: () => void;  // Add this prop
+  onAboutUsClick?: () => void; 
 }
 
 const LandingPage: React.FC<LandingPageProps> = ({ onLoginClick, onSignUpClick, onAboutUsClick }) => {
