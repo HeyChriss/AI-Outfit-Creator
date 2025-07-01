@@ -1,0 +1,15 @@
+[
+  {
+    "id": "f5269cba-861f-48f4-aafb-e91c19a1e11f",
+    "category": "Pants",
+    "image": "Pants\\f5269cba-861f-48f4-aafb-e91c19a1e11f.jpg",
+    "details": {
+      "name": "Jeans",
+      "category": "Pants",
+      "color": "Navy Blue",
+      "brand": "Levi",
+      "notes": "asdfsd"
+    },
+    "timestamp": "2025-07-01T21:58:52.607394Z"
+  }
+]
