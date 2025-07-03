@@ -4,10 +4,11 @@ import { useAuth } from '../../contexts/AuthContext';
 
 interface HeaderProps {
   onLoginClick: () => void;
-  onAboutUsClick?: () => void;  // Add this prop
+  onAboutUsClick?: () => void;
+  onLogoClick?: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ onLoginClick, onAboutUsClick }) => {
+const Header: React.FC<HeaderProps> = ({ onLoginClick, onAboutUsClick, onLogoClick }) => {
   const { user, signOut } = useAuth();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
@@ -196,10 +197,12 @@ const Header: React.FC<HeaderProps> = ({ onLoginClick, onAboutUsClick }) => {
 
   return (
     <header style={styles.header}>
-      <div style={styles.container}>
+      <div style={styles.container} className="header-container">
         {/* Logo Section */}
         <div 
           style={styles.logoSection}
+          className="logo-section"
+          onClick={onLogoClick}
           onMouseEnter={(e) => {
             e.currentTarget.style.transform = 'scale(1.02)';
           }}
@@ -211,14 +214,15 @@ const Header: React.FC<HeaderProps> = ({ onLoginClick, onAboutUsClick }) => {
             src={logo} 
             alt="DrippedUp Logo" 
             style={styles.logoImage}
+            className="logo-image"
           />
-          <div style={styles.logoText}>
+          <div style={styles.logoText} className="logo-text">
             DrippedUp
           </div>
         </div>
         
         {/* Navigation */}
-        <nav style={styles.nav}>
+        <nav style={styles.nav} className="nav">
           <a 
             style={styles.navLink}
             onClick={onAboutUsClick}
@@ -262,9 +266,9 @@ const Header: React.FC<HeaderProps> = ({ onLoginClick, onAboutUsClick }) => {
         </nav>
 
         {/* Auth Section */}
-        <div style={styles.authSection}>
+        <div style={styles.authSection} className="auth-section">
           {user && (
-            <div style={styles.userGreeting}>
+            <div style={styles.userGreeting} className="user-greeting">
               <div style={styles.onlineIndicator}></div>
               <span style={styles.userName}>
                 Hi, {user.user_metadata?.first_name || user.email?.split('@')[0]}!
@@ -278,6 +282,7 @@ const Header: React.FC<HeaderProps> = ({ onLoginClick, onAboutUsClick }) => {
               ...styles.authButton,
               ...(user ? styles.logoutButton : styles.loginButton)
             }}
+            className="auth-button"
             onMouseEnter={(e) => {
               if (user) {
                 e.currentTarget.style.background = 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)';
@@ -320,6 +325,68 @@ const Header: React.FC<HeaderProps> = ({ onLoginClick, onAboutUsClick }) => {
         @keyframes pulse {
           0%, 100% { opacity: 1; }
           50% { opacity: 0.5; }
+        }
+        
+        /* Mobile responsive styles */
+        @media (max-width: 768px) {
+          .header-container {
+            padding: 0 1rem !important;
+            height: 70px !important;
+          }
+          
+          .logo-section {
+            gap: 0.5rem !important;
+          }
+          
+          .logo-image {
+            height: 60px !important;
+          }
+          
+          .logo-text {
+            font-size: 1.2rem !important;
+          }
+          
+          .nav {
+            display: none !important;
+          }
+          
+          .auth-section {
+            gap: 0.5rem !important;
+          }
+          
+          .user-greeting {
+            padding: 0.25rem 0.5rem !important;
+            font-size: 0.8rem !important;
+          }
+          
+          .auth-button {
+            padding: 0.5rem 1rem !important;
+            font-size: 0.85rem !important;
+          }
+        }
+        
+        @media (max-width: 480px) {
+          .header-container {
+            padding: 0 0.5rem !important;
+            height: 60px !important;
+          }
+          
+          .logo-image {
+            height: 50px !important;
+          }
+          
+          .logo-text {
+            font-size: 1rem !important;
+          }
+          
+          .user-greeting {
+            display: none !important;
+          }
+          
+          .auth-button {
+            padding: 0.4rem 0.8rem !important;
+            font-size: 0.8rem !important;
+          }
         }
       `}</style>
     </header>
