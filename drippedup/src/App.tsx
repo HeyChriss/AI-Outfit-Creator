@@ -5,6 +5,7 @@ import Footer from './components/layout/Footer'
 import Header from './components/layout/Header'
 import NewItem from './components/pages/newItem/NewItem'
 import AboutUs from './components/pages/AboutUs'  
+import Outfit from './components/pages/outfits/Outfit'
 import LoginPage from './components/auth/LoginPage'
 import SignUpPage from './components/auth/SignUpPage'
 import LandingPage from './components/layout/LandingPage'
@@ -12,7 +13,7 @@ import Dashboard from './components/pages/Dashboard'
 import { useAuth } from './contexts/AuthContext'
 
 type AuthView = 'login' | 'signup' | null;
-type CurrentView = 'landing' | 'dashboard' | 'newItem' | 'aboutUs';
+type CurrentView = 'landing' | 'dashboard' | 'newItem' | 'aboutUs' | 'outfits';
 
 function App() {
   const [currentView, setCurrentView] = useState<CurrentView>('landing')
@@ -23,7 +24,7 @@ function App() {
   React.useEffect(() => {
     if (user && currentView === 'landing') {
       setCurrentView('dashboard')
-    } else if (!user && (currentView === 'dashboard' || currentView === 'newItem')) {
+    } else if (!user && (currentView === 'dashboard' || currentView === 'newItem' || currentView === 'outfits')) {
       setCurrentView('landing')
     }
   }, [user, currentView])
@@ -92,6 +93,17 @@ function App() {
     );
   }
 
+  if (currentView === 'outfits') {
+    return (
+      <Outfit 
+        onUploadClick={() => setCurrentView('newItem')}
+        onLoginClick={() => setAuthView('login')}
+        onAboutUsClick={() => setCurrentView('aboutUs')}
+        onLogoClick={() => setCurrentView('landing')}
+      />
+    );
+  }
+
   if (currentView === 'aboutUs') {
     return (
       <AboutUs 
@@ -111,6 +123,7 @@ function App() {
           onLoginClick={() => setAuthView('login')}
           onAboutUsClick={() => setCurrentView('aboutUs')}
           onLogoClick={() => setCurrentView('landing')}
+          onOutfitClick={() => setAuthView('login')} 
         />
         <main
           style={{
@@ -138,6 +151,7 @@ function App() {
         onLoginClick={() => setAuthView('login')}
         onAboutUsClick={() => setCurrentView('aboutUs')}
         onLogoClick={() => setCurrentView('landing')}
+        onOutfitClick={() => setCurrentView('outfits')} // Navigate to outfits for authenticated users
       />
       <main
         style={{
@@ -147,7 +161,10 @@ function App() {
           overflowY: 'auto'
         }}
       >
-        <Dashboard onUploadClick={() => setCurrentView('newItem')} />
+        <Dashboard 
+          onUploadClick={() => setCurrentView('newItem')} 
+          onOutfitClick={() => setCurrentView('outfits')}
+        />
       </main>
       <Footer onAboutUsClick={() => setCurrentView('aboutUs')} />
       

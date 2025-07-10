@@ -2,17 +2,20 @@ import React, { useState, useEffect } from 'react';
 import logo from '../../assets/logo.png'; 
 import { useAuth } from '../../contexts/AuthContext';
 
+
 interface HeaderProps {
   onLoginClick: () => void;
   onAboutUsClick?: () => void;
   onLogoClick?: () => void;
+  onOutfitClick?: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ onLoginClick, onAboutUsClick, onLogoClick }) => {
+const Header: React.FC<HeaderProps> = ({ onLoginClick, onAboutUsClick, onLogoClick, onOutfitClick }) => {
   const { user, signOut } = useAuth();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
+
 
   useEffect(() => {
     const handleScroll = () => {
@@ -64,6 +67,8 @@ const Header: React.FC<HeaderProps> = ({ onLoginClick, onAboutUsClick, onLogoCli
       onLoginClick();
     }
   };
+  
+
 
   const styles = {
     header: {
@@ -239,6 +244,7 @@ const Header: React.FC<HeaderProps> = ({ onLoginClick, onAboutUsClick, onLogoCli
           </a>
           <a 
             style={styles.navLink}
+            onClick={onOutfitClick}
             onMouseEnter={(e) => {
               e.currentTarget.style.color = '#667eea';
               e.currentTarget.style.transform = 'translateY(-1px)';
