@@ -16,6 +16,7 @@ import { config } from '../../config';
 
 interface DashboardProps {
   onUploadClick: () => void;
+  onOutfitClick: () => void;
 }
 
 interface RecentUpload {
@@ -29,7 +30,7 @@ interface RecentUpload {
   };
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ onUploadClick }) => {
+const Dashboard: React.FC<DashboardProps> = ({ onUploadClick, onOutfitClick }) => {
   const { user } = useAuth();
   const [screenSize, setScreenSize] = useState({
     width: typeof window !== 'undefined' ? window.innerWidth : 1200,
@@ -399,6 +400,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onUploadClick }) => {
               Upload New Item
             </button>
             <button 
+              onClick={onOutfitClick}
               style={styles.actionButton}
               onMouseEnter={(e) => {
                 e.currentTarget.style.background = 'rgba(255, 255, 255, 0.3)';
@@ -621,6 +623,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onUploadClick }) => {
 
         <div 
           style={styles.navCard}
+          onClick={onOutfitClick}
           onMouseEnter={(e) => {
             e.currentTarget.style.transform = 'translateY(-4px)';
             e.currentTarget.style.boxShadow = '0 8px 30px rgba(0, 0, 0, 0.1)';
