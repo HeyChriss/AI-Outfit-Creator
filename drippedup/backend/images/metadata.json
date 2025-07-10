@@ -11,5 +11,44 @@
       "notes": "asdfsd"
     },
     "timestamp": "2025-07-01T21:58:52.607394Z"
+  },
+  {
+    "id": "fecfcd59-2d27-4959-86e1-3f04a2e8e48f",
+    "category": "T-Shirt",
+    "image": "T-Shirt\\fecfcd59-2d27-4959-86e1-3f04a2e8e48f.jpg",
+    "details": {
+      "name": "",
+      "category": "T-Shirt",
+      "color": "Blue",
+      "brand": "nunano",
+      "notes": ""
+    },
+    "timestamp": "2025-07-02T23:37:40.278749Z"
+  },
+  {
+    "id": "83fcc4bd-7cfe-41b0-9f23-281070b7039e",
+    "category": "Pants",
+    "image": "Pants\\83fcc4bd-7cfe-41b0-9f23-281070b7039e.jpg",
+    "details": {
+      "name": "Blue Jeans",
+      "category": "Pants",
+      "color": "Navy Blue",
+      "brand": "Levis",
+      "notes": "This is my favorite "
+    },
+    "timestamp": "2025-07-09T23:25:02.554168Z"
+  },
+  {
+    "id": "5b4325f7-6d25-4b14-ae49-16fd4a9fd675",
+    "category": "Pants",
+    "image": "Pants\\5b4325f7-6d25-4b14-ae49-16fd4a9fd675.jpg",
+    "details": {
+      "name": "Green Pants",
+      "category": "Pants",
+      "color": "Green",
+      "brand": "Unknown",
+      "notes": ""
+    },
+    "timestamp": "2025-07-09T23:41:34.894090Z"
   }
 ]

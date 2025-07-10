@@ -1,6 +1,6 @@
 from fastapi import FastAPI, File, UploadFile, HTTPException, Form
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
 import uvicorn
 import os
 import io
@@ -9,7 +9,7 @@ import logging
 from classification import ClothingClassifier
 from PIL import Image
 import numpy as np
-from storage import save_item
+from storage import save_item, get_recent_uploads
 import json
 
 # Configure logging
@@ -178,6 +178,45 @@ async def save_item_endpoint(
     details_dict = json.loads(details) if details else {}
     # Use the abstracted save_item function
     return save_item(file, clothing_type, details_dict)
+
+@app.get("/recent-uploads")
+async def get_recent_uploads_endpoint():
+    """
+    Get the most recent uploads from the storage.
+    """
+    try:
+        recent_uploads = get_recent_uploads()
+        return {"recent_uploads": recent_uploads}
+    except Exception as e:
+        logger.error(f"Error getting recent uploads: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to get recent uploads: {str(e)}")
+
+@app.get("/images/{category}/{filename}")
+async def serve_image(category: str, filename: str):
+    """
+    Serve image files from the images directory.
+    """
+    try:
+        # Construct the full path to the image
+        images_dir = os.path.join(os.path.dirname(__file__), "images")
+        image_path = os.path.join(images_dir, category, filename)
+        
+        # Check if file exists
+        if not os.path.exists(image_path):
+            raise HTTPException(status_code=404, detail="Image not found")
+        
+        # Check if it's actually a file and not a directory
+        if not os.path.isfile(image_path):
+            raise HTTPException(status_code=404, detail="Image not found")
+        
+        # Return the file
+        return FileResponse(image_path)
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error serving image {category}/{filename}: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to serve image: {str(e)}")
 
 # Error handlers
 # Converts errors to consistent JSON responses with the appropriate status code

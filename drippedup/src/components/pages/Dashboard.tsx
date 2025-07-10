@@ -9,11 +9,24 @@ import {
   Sparkles,
   Calendar,
   BarChart3,
+  RefreshCw,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { config } from '../../config';
 
 interface DashboardProps {
   onUploadClick: () => void;
+}
+
+interface RecentUpload {
+  image_path: string;
+  item_info: {
+    id: string;
+    category: string;
+    image: string;
+    details: any;
+    timestamp: string;
+  };
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ onUploadClick }) => {
@@ -22,6 +35,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onUploadClick }) => {
     width: typeof window !== 'undefined' ? window.innerWidth : 1200,
     height: typeof window !== 'undefined' ? window.innerHeight : 800
   });
+  const [recentUploads, setRecentUploads] = useState<RecentUpload[]>([]); // stores an array of recent uploads
+  const [loading, setLoading] = useState(true); // loading state when fetching recent uploads
 
   useEffect(() => {
     const handleResize = () => {
@@ -35,16 +50,65 @@ const Dashboard: React.FC<DashboardProps> = ({ onUploadClick }) => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  useEffect(() => {
+    const fetchRecentUploads = async () => { // fetches recent uploads from the backend
+      try {
+        const response = await fetch(`${config.API_BASE_URL}/recent-uploads`); // fetches recent uploads from the backend
+        if (response.ok) {
+          const data = await response.json(); // parses the response as JSON
+          setRecentUploads(data.recent_uploads || []); // sets the recent uploads to the data
+        } else {
+          console.error('Failed to fetch recent uploads');
+        }
+      } catch (error) {
+        console.error('Error fetching recent uploads:', error);
+      } finally {
+        setLoading(false); // sets loading to false because the recent uploads have been fetched
+      }
+    };
+
+    fetchRecentUploads();
+  }, []);
+
   const isMobile = screenSize.width < 768;
   const isTablet = screenSize.width >= 768 && screenSize.width < 1024;
 
-  // Mock data - in real app, this would come from your database
-  const recentUploads = [
-    { id: 1, name: 'Blue Denim Jacket', category: 'Outerwear', image: '🧥', uploadedAt: '2 hours ago' },
-    { id: 2, name: 'White Cotton T-Shirt', category: 'Tops', image: '👕', uploadedAt: '1 day ago' },
-    { id: 3, name: 'Black Leather Boots', category: 'Shoes', image: '👢', uploadedAt: '3 days ago' },
-    { id: 4, name: 'Floral Summer Dress', category: 'Dresses', image: '👗', uploadedAt: '1 week ago' },
-  ];
+  // Helper function to format timestamp
+  const formatTimeAgo = (timestamp: string) => {
+    const now = new Date();
+    const uploadTime = new Date(timestamp);
+    const diffInMs = now.getTime() - uploadTime.getTime();
+    const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
+    const diffInDays = Math.floor(diffInHours / 24);
+
+    if (diffInHours < 1) return 'Just now';
+    if (diffInHours < 24) return `${diffInHours} hours ago`;
+    if (diffInDays === 1) return '1 day ago';
+    return `${diffInDays} days ago`;
+  };
+
+  // Helper function to get image URL
+  const getImageUrl = (imagePath: string) => {
+    return `${config.API_BASE_URL}/images/${imagePath}`;
+  };
+
+  // Function to refresh recent uploads if the user clicks the refresh button
+  const refreshRecentUploads = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch(`${config.API_BASE_URL}/recent-uploads`);
+      if (response.ok) {
+        const data = await response.json();
+        setRecentUploads(data.recent_uploads || []);
+      } else {
+        console.error('Failed to fetch recent uploads');
+      }
+    } catch (error) {
+      console.error('Error fetching recent uploads:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const outfitSuggestions = [
     { id: 1, name: 'Casual Friday', items: ['👕', '👖', '👟'], likes: 24 },
@@ -53,11 +117,26 @@ const Dashboard: React.FC<DashboardProps> = ({ onUploadClick }) => {
   ];
 
   const stats = {
-    totalItems: 47,
+    totalItems: recentUploads.length || 0,
     outfitsCreated: 12,
     timesWorn: 89,
     favoriteCategory: 'Tops'
   };
+
+  // Add CSS keyframes for spinning animation
+  if (typeof document !== 'undefined') {
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+      }
+    `;
+    if (!document.head.querySelector('style[data-spin-animation]')) {
+      style.setAttribute('data-spin-animation', 'true');
+      document.head.appendChild(style);
+    }
+  }
 
   const styles = {
     container: {
@@ -346,13 +425,41 @@ const Dashboard: React.FC<DashboardProps> = ({ onUploadClick }) => {
               <Clock size={20} />
               Recent Uploads
             </h2>
-            <a style={styles.viewAllButton}>View All</a>
+            <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+              <button
+                onClick={refreshRecentUploads}
+                disabled={loading}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#667eea',
+                  cursor: loading ? 'not-allowed' : 'pointer',
+                  padding: '0.25rem',
+                  borderRadius: '4px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  opacity: loading ? 0.5 : 1,
+                  transition: 'opacity 0.2s ease',
+                }}
+                title="Refresh uploads"
+              >
+                <RefreshCw size={16} style={{ 
+                  animation: loading ? 'spin 1s linear infinite' : 'none' 
+                }} />
+              </button>
+              <a style={styles.viewAllButton}>View All</a>
+            </div>
           </div>
-          {recentUploads.length > 0 ? (
+          {loading ? (
+            <div style={styles.emptyState}>
+              <div style={styles.emptyIcon}>⏳</div>
+              <p>Loading your recent uploads...</p>
+            </div>
+          ) : recentUploads.length > 0 ? (
             <div style={styles.itemGrid}>
-              {recentUploads.map((item) => (
+              {recentUploads.map((upload) => (
                 <div 
-                  key={item.id}
+                  key={upload.item_info.id}
                   style={styles.itemCard}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.transform = 'translateY(-4px)';
@@ -363,10 +470,42 @@ const Dashboard: React.FC<DashboardProps> = ({ onUploadClick }) => {
                     e.currentTarget.style.boxShadow = 'none';
                   }}
                 >
-                  <span style={styles.itemEmoji}>{item.image}</span>
-                  <div style={styles.itemName}>{item.name}</div>
-                  <div style={styles.itemCategory}>{item.category}</div>
-                  <div style={styles.itemTime}>{item.uploadedAt}</div>
+                  <div style={{
+                    width: '60px',
+                    height: '60px',
+                    borderRadius: '8px',
+                    margin: '0 auto 0.5rem',
+                    overflow: 'hidden',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: '#f1f5f9',
+                    border: '1px solid #e2e8f0',
+                  }}>
+                    <img 
+                      src={getImageUrl(upload.item_info.image)}
+                      alt={upload.item_info.details?.name || upload.item_info.category}
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                      }}
+                      onError={(e) => {
+                        // Replace with emoji fallback if image fails to load
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = 'none';
+                        const parent = target.parentElement;
+                        if (parent) {
+                          parent.innerHTML = '<span style="font-size: 2rem;">👕</span>';
+                        }
+                      }}
+                    />
+                  </div>
+                  <div style={styles.itemName}>
+                    {upload.item_info.details?.name || upload.item_info.category}
+                  </div>
+                  <div style={styles.itemCategory}>{upload.item_info.category}</div>
+                  <div style={styles.itemTime}>{formatTimeAgo(upload.item_info.timestamp)}</div>
                 </div>
               ))}
             </div>
