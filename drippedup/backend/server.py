@@ -9,7 +9,7 @@ import logging
 from classification import ClothingClassifier
 from PIL import Image
 import numpy as np
-from storage import save_item, get_recent_uploads
+from storage import save_item, get_recent_uploads, get_all_categories, get_items_by_category, get_all_items_grouped_by_category
 import json
 
 # Configure logging
@@ -217,6 +217,42 @@ async def serve_image(category: str, filename: str):
     except Exception as e:
         logger.error(f"Error serving image {category}/{filename}: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to serve image: {str(e)}")
+
+@app.get("/categories")
+async def get_categories():
+    """
+    Get all available clothing categories.
+    """
+    try:
+        categories = get_all_categories()
+        return {"categories": categories}
+    except Exception as e:
+        logger.error(f"Error getting categories: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to get categories: {str(e)}")
+
+@app.get("/items/category/{category}")
+async def get_items_by_category_endpoint(category: str):
+    """
+    Get all items for a specific category.
+    """
+    try:
+        items = get_items_by_category(category)
+        return {"category": category, "items": items}
+    except Exception as e:
+        logger.error(f"Error getting items for category {category}: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to get items for category: {str(e)}")
+
+@app.get("/items/grouped")
+async def get_items_grouped_by_category_endpoint():
+    """
+    Get all items grouped by category.
+    """
+    try:
+        grouped_items = get_all_items_grouped_by_category()
+        return {"items_by_category": grouped_items}
+    except Exception as e:
+        logger.error(f"Error getting grouped items: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to get grouped items: {str(e)}")
 
 # Error handlers
 # Converts errors to consistent JSON responses with the appropriate status code
