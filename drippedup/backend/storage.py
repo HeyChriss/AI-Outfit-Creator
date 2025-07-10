@@ -109,3 +109,33 @@ def get_item_info(id: str) -> Optional[Dict]:
         if item.get("id") == id:
             return item
     return None 
+
+def get_all_categories() -> List[str]:
+    """Return a list of all unique categories from metadata.json."""
+    metadata = get_metadata()
+    categories = set()
+    for item in metadata:
+        if item.get("category"):
+            categories.add(item["category"])
+    return sorted(list(categories))
+
+def get_items_by_category(category: str) -> List[Dict]:
+    """Return all items for a specific category."""
+    metadata = get_metadata()
+    items = []
+    for item in metadata:
+        if item.get("category") == category:
+            items.append(item)
+    return items
+
+def get_all_items_grouped_by_category() -> Dict[str, List[Dict]]:
+    """Return all items grouped by category."""
+    metadata = get_metadata()
+    grouped = {}
+    for item in metadata:
+        category = item.get("category")
+        if category:
+            if category not in grouped:
+                grouped[category] = []
+            grouped[category].append(item)
+    return grouped
