@@ -11,6 +11,7 @@ from PIL import Image
 import numpy as np
 from storage import save_item, get_recent_uploads, get_all_categories, get_items_by_category, get_all_items_grouped_by_category
 import json
+from fashion import FashionCompatibility
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -26,7 +27,7 @@ app = FastAPI(
 # Add CORS middleware to allow frontend requests
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, specify your frontend URL
+    allow_origins=["*"],  # might have to change this in production
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -34,17 +35,24 @@ app.add_middleware(
 
 # Initialize the classifier globally
 classifier = None
+fashion = None
 
 @app.on_event("startup")
 async def startup_event():
-    """Initialize the classifier when the server starts."""
-    global classifier
+    """Initialize the classifier and fashion tester when the server starts."""
+    global classifier, fashion
     try:
         classifier = ClothingClassifier()
         logger.info("Classifier initialized successfully")
     except Exception as e:
         logger.error(f"Failed to initialize classifier: {e}")
         raise
+    try:
+        fashion = FashionCompatibility()
+        logger.info("FashionCompatibility initialized successfully")
+    except Exception as e:
+        logger.error(f"Failed to initialize FashionCompatibility: {e}")
+        fashion = None
 
 @app.get("/")
 async def root():
@@ -253,6 +261,49 @@ async def get_items_grouped_by_category_endpoint():
     except Exception as e:
         logger.error(f"Error getting grouped items: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to get grouped items: {str(e)}")
+
+@app.post("/fashion-predict")
+async def fashion_predict(file1: UploadFile = File(...), file2: UploadFile = File(...)):
+    """
+    Predict fashion compatibility between two uploaded images.
+    Args:
+        file1: The first uploaded image file
+        file2: The second uploaded image file
+    Returns:
+        JSON response with compatibility score and embeddings
+    """
+    global fashion
+    if fashion is None:
+        raise HTTPException(status_code=503, detail="FashionCompatibilityTester not initialized")
+    # Validate file types
+    if not file1.content_type.startswith('image/') or not file2.content_type.startswith('image/'):
+        raise HTTPException(status_code=400, detail="Both files must be images")
+    try:
+        image_data1 = await file1.read()
+        image_data2 = await file2.read()
+        
+
+        img1 = process_image_from_memory(image_data1, 224)[0]  #
+        img2 = process_image_from_memory(image_data2, 224)[0]
+        # Predict compatibility
+        result = fashion.predict(img1, img2)
+        result["uploaded_files"] = [
+            {"filename": file1.filename, "content_type": file1.content_type, "size": len(image_data1)},
+            {"filename": file2.filename, "content_type": file2.content_type, "size": len(image_data2)}
+        ]
+        logger.info(f"Fashion compatibility prediction completed for {file1.filename} and {file2.filename}")
+        return result
+    except Exception as e:
+        logger.error(f"Error processing fashion prediction: {e}")
+        raise HTTPException(status_code=500, detail=f"Fashion prediction failed: {str(e)}")
+
+@app.get("/fashion-model-info")
+async def get_fashion_model_info():
+    """Get information about the loaded fashion model."""
+    global fashion
+    if fashion is None:
+        raise HTTPException(status_code=503, detail="FashionCompatibilityTester not initialized")
+    return fashion.get_model_info()
 
 # Error handlers
 # Converts errors to consistent JSON responses with the appropriate status code
