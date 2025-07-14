@@ -1,0 +1,16 @@
+[
+  {
+    "id": "95bedf53-46b3-49d7-9b49-529552af34a0",
+    "name": "Testing outfit",
+    "item_ids": [
+      "b1988630-a0da-4039-8bf5-50bc44242c4f",
+      "aed95788-6adc-45d1-9f90-facde6a20512",
+      "251d649e-7621-4508-8d6b-06e2c1e053c8"
+    ],
+    "description": "This is an outfit",
+    "tags": [
+      "summer"
+    ],
+    "created_at": "2025-07-14T06:05:47.703378Z"
+  }
+]

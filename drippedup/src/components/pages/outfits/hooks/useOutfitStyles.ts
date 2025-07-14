@@ -161,8 +161,6 @@ const useOutfitStyles = () => {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: '#f1f5f9',
-      border: '1px solid #e2e8f0',
       marginBottom: '0.5rem',
     },
     itemName: {
@@ -202,7 +200,6 @@ const useOutfitStyles = () => {
       justifyContent: 'center',
     },
     matchOptions: {
-      display: 'flex',
       gap: '1rem',
       marginBottom: '2rem',
       flexWrap: 'wrap' as const,
