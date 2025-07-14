@@ -38,6 +38,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onUploadClick, onOutfitClick }) =
   });
   const [recentUploads, setRecentUploads] = useState<RecentUpload[]>([]); // stores an array of recent uploads
   const [loading, setLoading] = useState(true); // loading state when fetching recent uploads
+  const [outfitsCount, setOutfitsCount] = useState(0); // stores the actual number of outfits created
 
   useEffect(() => {
     const handleResize = () => {
@@ -71,6 +72,24 @@ const Dashboard: React.FC<DashboardProps> = ({ onUploadClick, onOutfitClick }) =
     fetchRecentUploads();
   }, []);
 
+  useEffect(() => {
+    const fetchOutfitsCount = async () => { // fetches the actual number of outfits from the backend
+      try {
+        const response = await fetch(`${config.API_BASE_URL}/outfits/basic`); // fetches outfits from the backend
+        if (response.ok) {
+          const data = await response.json(); // parses the response as JSON
+          setOutfitsCount(data.count || 0); // sets the outfits count from the API response
+        } else {
+          console.error('Failed to fetch outfits count');
+        }
+      } catch (error) {
+        console.error('Error fetching outfits count:', error);
+      }
+    };
+
+    fetchOutfitsCount();
+  }, []);
+
   const isMobile = screenSize.width < 768;
   const isTablet = screenSize.width >= 768 && screenSize.width < 1024;
 
@@ -93,19 +112,29 @@ const Dashboard: React.FC<DashboardProps> = ({ onUploadClick, onOutfitClick }) =
     return `${config.API_BASE_URL}/images/${imagePath}`;
   };
 
-  // Function to refresh recent uploads if the user clicks the refresh button
+  // Function to refresh recent uploads and outfits count if the user clicks the refresh button
   const refreshRecentUploads = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`${config.API_BASE_URL}/recent-uploads`);
-      if (response.ok) {
-        const data = await response.json();
-        setRecentUploads(data.recent_uploads || []);
+      // Fetch recent uploads
+      const uploadsResponse = await fetch(`${config.API_BASE_URL}/recent-uploads`);
+      if (uploadsResponse.ok) {
+        const uploadsData = await uploadsResponse.json();
+        setRecentUploads(uploadsData.recent_uploads || []);
       } else {
         console.error('Failed to fetch recent uploads');
       }
+
+      // Fetch outfits count
+      const outfitsResponse = await fetch(`${config.API_BASE_URL}/outfits/basic`);
+      if (outfitsResponse.ok) {
+        const outfitsData = await outfitsResponse.json();
+        setOutfitsCount(outfitsData.count || 0);
+      } else {
+        console.error('Failed to fetch outfits count');
+      }
     } catch (error) {
-      console.error('Error fetching recent uploads:', error);
+      console.error('Error fetching data:', error);
     } finally {
       setLoading(false);
     }
@@ -119,7 +148,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onUploadClick, onOutfitClick }) =
 
   const stats = {
     totalItems: recentUploads.length || 0,
-    outfitsCreated: 12,
+    outfitsCreated: outfitsCount,
     timesWorn: 89,
     favoriteCategory: 'Tops'
   };
