@@ -1,13 +1,14 @@
 import os
 import logging
 from dotenv import load_dotenv
-from typing import Dict, Optional
+from typing import Dict, Optional, Union
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torchvision import models, transforms
 from PIL import Image
 import numpy as np
+import cv2
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -103,30 +104,65 @@ class FashionCompatibility:
             logger.error(f"Error loading model weights: {e}")
             raise
 
-    def preprocess_image(self, img: Image.Image) -> torch.Tensor:
-        return self.transform(img).unsqueeze(0).to(self.device)
-
-    def predict(self, img1: np.ndarray, img2: np.ndarray) -> Dict:
+    def load_image_from_path(self, image_path: str) -> torch.Tensor:
         """
-        Make compatibility prediction for two images.
-        Args:
-            img1 (np.ndarray): First image as numpy array (HWC, RGB)
-            img2 (np.ndarray): Second image as numpy array (HWC, RGB)
-        Returns:
-            dict: Compatibility score and embeddings
+        Load image from file path
         """
-        if self.model is None:
-            raise ValueError("Model not initialized")
         try:
-            pil_img1 = Image.fromarray(img1.astype('uint8'), 'RGB')
-            pil_img2 = Image.fromarray(img2.astype('uint8'), 'RGB')
-            tensor1 = self.preprocess_image(pil_img1)
-            tensor2 = self.preprocess_image(pil_img2)
+            image = Image.open(image_path).convert('RGB')
+            image_tensor = self.transform(image).unsqueeze(0)
+            return image_tensor.to(self.device)
+        except Exception as e:
+            logger.error(f"Error loading image {image_path}: {e}")
+            return None
+
+    def preprocess_image(self, img: Union[Image.Image, np.ndarray, str]) -> torch.Tensor:
+        """
+        this has to be done this way because the model expects a tensor. We cannot use the image directly. 
+        or the other function with the other model.
+        """
+        if isinstance(img, str):
+            # If it's a file path, load it directly
+            return self.load_image_from_path(img)
+        elif isinstance(img, np.ndarray):
+            # Ensure the array is in the right format
+            if img.dtype != np.uint8:
+                # If it's in 0-1 range, convert to 0-255
+                if img.max() <= 1.0:
+                    img = (img * 255).astype(np.uint8)
+                else:
+                    img = img.astype(np.uint8)
+            
+            # Ensure it's RGB just in case 
+            if len(img.shape) == 3 and img.shape[2] == 3:
+                # Convert BGR to RGB if needed (common with OpenCV)
+                img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+            
+            pil_img = Image.fromarray(img, 'RGB')
+        elif isinstance(img, Image.Image):
+            pil_img = img.convert('RGB')
+        else:
+            raise ValueError(f"Unsupported image type: {type(img)}")
+        
+        return self.transform(pil_img).unsqueeze(0).to(self.device)
+
+    def predict_from_paths(self, img1_path: str, img2_path: str) -> Dict:
+        """
+        Predict compatibility from paths.
+        """
+        try:
+            tensor1 = self.load_image_from_path(img1_path)
+            tensor2 = self.load_image_from_path(img2_path)
+            
+            if tensor1 is None or tensor2 is None:
+                raise ValueError("Failed to load one or both images")
+            
             with torch.no_grad():
                 compatibility, embedding1, embedding2 = self.model(tensor1, tensor2)
                 score = float(compatibility.item())
                 emb1 = embedding1.cpu().numpy().flatten().tolist()
                 emb2 = embedding2.cpu().numpy().flatten().tolist()
+            
             return {
                 "compatibility_score": score,
                 "embedding1": emb1,
@@ -145,11 +181,12 @@ class FashionCompatibility:
             "embedding_dim": 128,
             "weights_loaded": self.model_weights_path is not None
         }
+    
 
 # Example usage 
-# if __name__ == "__main__":
-#     tester = FashionCompatibilityTester(model_path="fashion_model.pth")
-#     # img1 = ... # Load as numpy array
-#     # img2 = ... # Load as numpy array
-#     # result = tester.predict(img1, img2)
-#     # print(result) 
+#if __name__ == "__main__":
+ #   tester = FashionCompatibility()
+    # img1 = ... # Load as numpy array
+    # img2 = ... # Load as numpy array
+    # result = tester.predict(img1, img2)
+    # print(result) 

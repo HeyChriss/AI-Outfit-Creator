@@ -9,7 +9,13 @@ import logging
 from classification import ClothingClassifier
 from PIL import Image
 import numpy as np
-from storage import save_item, get_recent_uploads, get_all_categories, get_items_by_category, get_all_items_grouped_by_category
+from storage import (
+    save_item, get_recent_uploads, get_all_categories, get_items_by_category, 
+    get_all_items_grouped_by_category, get_metadata, get_picture, look_items, 
+    get_item_info, delete_by_id, save_outfit, get_outfit_with_items, 
+    get_recent_outfits, get_all_outfits_with_items, get_outfit_info, 
+    get_all_outfits, get_all_outfit_tags, get_outfits_by_tag, delete_outfit
+)
 import json
 from fashion import FashionCompatibility
 
@@ -19,9 +25,7 @@ logger = logging.getLogger(__name__)
 
 # Initialize FastAPI app
 app = FastAPI(
-    title="Clothing Classification API",
-    description="API for classifying clothing items using deep learning",
-    version="1.0.0"
+    title="DrippedUp API"
 )
 
 # Add CORS middleware to allow frontend requests
@@ -262,37 +266,70 @@ async def get_items_grouped_by_category_endpoint():
         logger.error(f"Error getting grouped items: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to get grouped items: {str(e)}")
 
-@app.post("/fashion-predict")
-async def fashion_predict(file1: UploadFile = File(...), file2: UploadFile = File(...)):
+@app.get("/item/{item_id}")
+async def get_item_by_id(item_id: str):
     """
-    Predict fashion compatibility between two uploaded images.
+    Get item information by ID.
+    """
+    try:
+        item_info = get_item_info(item_id)
+        if item_info is None:
+            raise HTTPException(status_code=404, detail="Item not found")
+        return {"item": item_info}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting item {item_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to get item: {str(e)}")
+
+@app.post("/fashion-predict")
+async def fashion_predict(item_id1: str = Form(...), item_id2: str = Form(...)):
+    """
+    Predict fashion compatibility between two items by their IDs.
     Args:
-        file1: The first uploaded image file
-        file2: The second uploaded image file
+        item_id1: The ID of the first item
+        item_id2: The ID of the second item
     Returns:
         JSON response with compatibility score and embeddings
     """
     global fashion
     if fashion is None:
-        raise HTTPException(status_code=503, detail="FashionCompatibilityTester not initialized")
-    # Validate file types
-    if not file1.content_type.startswith('image/') or not file2.content_type.startswith('image/'):
-        raise HTTPException(status_code=400, detail="Both files must be images")
+        raise HTTPException(status_code=503, detail="FashionCompatibility not initialized")
+    
     try:
-        image_data1 = await file1.read()
-        image_data2 = await file2.read()
+        # Get image paths for both items
+        image_path1 = get_picture(item_id1)
+        image_path2 = get_picture(item_id2)
         
-
-        img1 = process_image_from_memory(image_data1, 224)[0]  #
-        img2 = process_image_from_memory(image_data2, 224)[0]
-        # Predict compatibility
-        result = fashion.predict(img1, img2)
-        result["uploaded_files"] = [
-            {"filename": file1.filename, "content_type": file1.content_type, "size": len(image_data1)},
-            {"filename": file2.filename, "content_type": file2.content_type, "size": len(image_data2)}
+        if not image_path1:
+            raise HTTPException(status_code=404, detail=f"Item {item_id1} not found")
+        if not image_path2:
+            raise HTTPException(status_code=404, detail=f"Item {item_id2} not found")
+        
+        # Check if image files exist
+        if not os.path.exists(image_path1):
+            raise HTTPException(status_code=404, detail=f"Image file for item {item_id1} not found")
+        if not os.path.exists(image_path2):
+            raise HTTPException(status_code=404, detail=f"Image file for item {item_id2} not found")
+        
+        # Predict compatibility using paths
+        logger.info(f"Predicting compatibility between {image_path1} and {image_path2}")
+        result = fashion.predict_from_paths(image_path1, image_path2)
+        logger.info(f"Compatibility score: {result.get('compatibility_score', 'N/A')}")
+        
+        # Get item info for response
+        item_info1 = get_item_info(item_id1)
+        item_info2 = get_item_info(item_id2)
+        
+        result["items"] = [
+            {"id": item_id1, "info": item_info1},
+            {"id": item_id2, "info": item_info2}
         ]
-        logger.info(f"Fashion compatibility prediction completed for {file1.filename} and {file2.filename}")
+        
+        logger.info(f"Fashion compatibility prediction completed for items {item_id1} and {item_id2}")
         return result
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error processing fashion prediction: {e}")
         raise HTTPException(status_code=500, detail=f"Fashion prediction failed: {str(e)}")
@@ -302,8 +339,161 @@ async def get_fashion_model_info():
     """Get information about the loaded fashion model."""
     global fashion
     if fashion is None:
-        raise HTTPException(status_code=503, detail="FashionCompatibilityTester not initialized")
+        raise HTTPException(status_code=503, detail="FashionCompatibility not initialized")
     return fashion.get_model_info()
+
+# ========== OUTFIT ENDPOINTS ==========
+
+@app.post("/outfit")
+async def create_outfit(
+    name: str = Form(...),
+    item_ids: str = Form(...),  # JSON string of item IDs
+    description: str = Form(""),
+    tags: str = Form("[]")  # JSON string of tags
+):
+    """
+    Create a new outfit with the given name and item IDs.
+    """
+    try:
+        # Parse JSON strings
+        item_ids_list = json.loads(item_ids)
+        tags_list = json.loads(tags)
+        
+        # Validate that all items exist
+        for item_id in item_ids_list:
+            if get_item_info(item_id) is None:
+                raise HTTPException(status_code=400, detail=f"Item {item_id} not found")
+        
+        result = save_outfit(name, item_ids_list, description, tags_list)
+        return result
+    except json.JSONDecodeError as e:
+        raise HTTPException(status_code=400, detail=f"Invalid JSON format: {str(e)}")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error creating outfit: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to create outfit: {str(e)}")
+
+@app.get("/outfit/{outfit_id}")
+async def get_outfit_by_id(outfit_id: str):
+    """
+    Get outfit information by ID, including populated item details.
+    """
+    try:
+        outfit = get_outfit_with_items(outfit_id)
+        if outfit is None:
+            raise HTTPException(status_code=404, detail="Outfit not found")
+        return {"outfit": outfit}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting outfit {outfit_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to get outfit: {str(e)}")
+
+@app.get("/outfit/{outfit_id}/info")
+async def get_outfit_info_endpoint(outfit_id: str):
+    """
+    Get basic outfit information by ID (without populated item details).
+    """
+    try:
+        outfit = get_outfit_info(outfit_id)
+        if outfit is None:
+            raise HTTPException(status_code=404, detail="Outfit not found")
+        return {"outfit": outfit}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting outfit info {outfit_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to get outfit info: {str(e)}")
+
+@app.get("/outfits")
+async def get_all_outfits_endpoint():
+    """
+    Get all outfits with populated item details.
+    """
+    try:
+        outfits = get_all_outfits_with_items()
+        return {"outfits": outfits, "count": len(outfits)}
+    except Exception as e:
+        logger.error(f"Error getting all outfits: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to get outfits: {str(e)}")
+
+@app.get("/outfits/basic")
+async def get_all_outfits_basic():
+    """
+    Get all outfits without populated item details (faster).
+    """
+    try:
+        outfits = get_all_outfits()
+        return {"outfits": outfits, "count": len(outfits)}
+    except Exception as e:
+        logger.error(f"Error getting all outfits basic: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to get outfits: {str(e)}")
+
+@app.get("/outfits/recent/{limit}")
+async def get_recent_outfits_endpoint(limit: int):
+    """
+    Get the most recent outfits with populated item details.
+    """
+    try:
+        if limit <= 0:
+            raise HTTPException(status_code=400, detail="Limit must be positive")
+        if limit > 100:
+            raise HTTPException(status_code=400, detail="Limit cannot exceed 100")
+        
+        outfits = get_recent_outfits(limit)
+        return {"outfits": outfits, "count": len(outfits)}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting recent outfits: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to get recent outfits: {str(e)}")
+
+@app.get("/outfit-tags")
+async def get_outfit_tags():
+    """
+    Get all unique tags used in outfits.
+    """
+    try:
+        tags = get_all_outfit_tags()
+        return {"tags": tags, "count": len(tags)}
+    except Exception as e:
+        logger.error(f"Error getting outfit tags: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to get outfit tags: {str(e)}")
+
+@app.get("/outfits/tag/{tag}")
+async def get_outfits_by_tag_endpoint(tag: str):
+    """
+    Get all outfits that contain the specified tag.
+    """
+    try:
+        outfits = get_outfits_by_tag(tag)
+        return {"tag": tag, "outfits": outfits, "count": len(outfits)}
+    except Exception as e:
+        logger.error(f"Error getting outfits by tag {tag}: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to get outfits by tag: {str(e)}")
+
+@app.delete("/outfit/{outfit_id}")
+async def delete_outfit_endpoint(outfit_id: str):
+    """
+    Delete an outfit by ID.
+    """
+    try:
+        # Check if outfit exists first
+        outfit_info = get_outfit_info(outfit_id)
+        if outfit_info is None:
+            raise HTTPException(status_code=404, detail="Outfit not found")
+        
+        success = delete_outfit(outfit_id)
+        if not success:
+            raise HTTPException(status_code=404, detail="Outfit not found")
+        
+        return {"message": "Outfit deleted successfully", "id": outfit_id}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error deleting outfit {outfit_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to delete outfit: {str(e)}")
 
 # Error handlers
 # Converts errors to consistent JSON responses with the appropriate status code

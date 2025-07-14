@@ -50,5 +50,57 @@
       "notes": ""
     },
     "timestamp": "2025-07-09T23:41:34.894090Z"
+  },
+  {
+    "id": "5ab2c8d1-dded-4c37-b2f9-9652233a60ae",
+    "category": "Pants",
+    "image": "Pants\\5ab2c8d1-dded-4c37-b2f9-9652233a60ae.jpg",
+    "details": {
+      "name": "My favrotie one ",
+      "category": "Pants",
+      "color": "Blue",
+      "brand": "roger",
+      "notes": ""
+    },
+    "timestamp": "2025-07-10T20:50:29.930642Z"
+  },
+  {
+    "id": "b1988630-a0da-4039-8bf5-50bc44242c4f",
+    "category": "Pants",
+    "image": "Pants\\b1988630-a0da-4039-8bf5-50bc44242c4f.jpg",
+    "details": {
+      "name": "Black Pants",
+      "category": "Pants",
+      "color": "Black",
+      "brand": "IDK",
+      "notes": ""
+    },
+    "timestamp": "2025-07-14T02:23:07.437350Z"
+  },
+  {
+    "id": "251d649e-7621-4508-8d6b-06e2c1e053c8",
+    "category": "Outwear",
+    "image": "Outwear\\251d649e-7621-4508-8d6b-06e2c1e053c8.jpg",
+    "details": {
+      "name": "Big Sweater",
+      "category": "Outwear",
+      "color": "Green",
+      "brand": "Abrecombie",
+      "notes": ""
+    },
+    "timestamp": "2025-07-14T04:16:42.698605Z"
+  },
+  {
+    "id": "aed95788-6adc-45d1-9f90-facde6a20512",
+    "category": "Longsleeve",
+    "image": "Longsleeve\\aed95788-6adc-45d1-9f90-facde6a20512.jpg",
+    "details": {
+      "name": "Blue Sweater",
+      "category": "Longsleeve",
+      "color": "Navy Blue",
+      "brand": "LEvi",
+      "notes": ""
+    },
+    "timestamp": "2025-07-14T04:17:28.437873Z"
   }
 ]
