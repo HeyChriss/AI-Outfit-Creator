@@ -102,5 +102,57 @@
       "notes": ""
     },
     "timestamp": "2025-07-14T04:17:28.437873Z"
+  },
+  {
+    "id": "9b793608-2193-449f-96a0-4b880a99d63d",
+    "category": "Shirt",
+    "image": "Shirt\\9b793608-2193-449f-96a0-4b880a99d63d.webp",
+    "details": {
+      "name": "Summer Shirt",
+      "category": "Shirt",
+      "color": "Beige",
+      "brand": "Zara",
+      "notes": ""
+    },
+    "timestamp": "2025-07-16T04:08:41.701697Z"
+  },
+  {
+    "id": "46b95418-5cf8-499f-bce3-6fff9f2318c7",
+    "category": "Shoes",
+    "image": "Shoes\\46b95418-5cf8-499f-bce3-6fff9f2318c7.jpg",
+    "details": {
+      "name": "Clogs",
+      "category": "Shoes",
+      "color": "Brown",
+      "brand": "Clogs",
+      "notes": ""
+    },
+    "timestamp": "2025-07-16T04:21:57.659989Z"
+  },
+  {
+    "id": "16f8e0e8-875c-457a-985d-1a2d75182bbd",
+    "category": "Shoes",
+    "image": "Shoes\\16f8e0e8-875c-457a-985d-1a2d75182bbd.png",
+    "details": {
+      "name": "Nike Air Force",
+      "category": "Shoes",
+      "color": "White",
+      "brand": "Nike",
+      "notes": ""
+    },
+    "timestamp": "2025-07-16T04:22:46.904043Z"
+  },
+  {
+    "id": "e7990932-de2c-42a8-91be-ec09175cb441",
+    "category": "Shirt",
+    "image": "Shirt\\e7990932-de2c-42a8-91be-ec09175cb441.webp",
+    "details": {
+      "name": "nism ",
+      "category": "Shirt",
+      "color": "White",
+      "brand": "Zumies",
+      "notes": ""
+    },
+    "timestamp": "2025-07-16T04:27:24.738026Z"
   }
 ]
