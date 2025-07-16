@@ -6,10 +6,13 @@ import {
   ArrowLeft,
   RefreshCw,
   Camera,
+  Trash2,
 } from 'lucide-react';
 import Header from '../layout/Header';
 import { useOutfitData } from './outfits/hooks';
 import ItemDetailsModal from './outfits/itemDetailsModal';
+import Outfits from './outfits/Outfits';
+import { config } from '../../config';
 
 interface WardrobeProps {
   onUploadClick: () => void;
@@ -17,6 +20,7 @@ interface WardrobeProps {
   onLoginClick?: () => void;
   onAboutUsClick?: () => void;
   onLogoClick?: () => void;
+  onWardrobeClick?: () => void;
   onBackToDashboard?: () => void;
 }
 
@@ -26,6 +30,7 @@ const Wardrobe: React.FC<WardrobeProps> = ({
   onLoginClick = () => {},
   onAboutUsClick = () => {},
   onLogoClick = () => {},
+  onWardrobeClick = () => {},
   onBackToDashboard = () => {},
 }) => {
   const {
@@ -40,6 +45,8 @@ const Wardrobe: React.FC<WardrobeProps> = ({
   const [selectedItemForDetails, setSelectedItemForDetails] = useState<any>(null);
   const [showItemDetails, setShowItemDetails] = useState(false);
   const [showItemDetailsModal, setShowItemDetailsModal] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   // Item handlers
   const handleItemCardClick = (item: any) => {
@@ -65,6 +72,36 @@ const Wardrobe: React.FC<WardrobeProps> = ({
   const handleCloseItemOptions = () => {
     setShowItemDetails(false);
     setSelectedItemForDetails(null);
+  };
+
+  // Handle item deletion
+  const handleDeleteItem = async (itemId: string, itemName: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setDeleteError(null);
+    
+    if (window.confirm(`Are you sure you want to delete "${itemName}"? This action cannot be undone.`)) {
+      try {
+        const response = await fetch(`${config.API_BASE_URL}/item/${itemId}`, {
+          method: 'DELETE',
+        });
+        
+        if (response.ok) {
+          setSuccessMessage(`"${itemName}" deleted successfully!`);
+          // Clear success message after 3 seconds
+          setTimeout(() => {
+            setSuccessMessage(null);
+          }, 3000);
+          // Refresh the data to reflect the deletion
+          refreshData();
+        } else {
+          const errorData = await response.json().catch(() => ({}));
+          setDeleteError(errorData.detail || 'Failed to delete item');
+        }
+      } catch (err) {
+        setDeleteError('Error deleting item. Please try again.');
+        console.error('Error deleting item:', err);
+      }
+    }
   };
 
   const renderItemImage = (item: any, size: string = '120px') => (
@@ -200,6 +237,26 @@ const Wardrobe: React.FC<WardrobeProps> = ({
       textAlign: 'center' as const,
       cursor: 'pointer',
       transition: 'all 0.2s ease',
+      position: 'relative' as const,
+    },
+    deleteButton: {
+      position: 'absolute' as const,
+      top: '8px',
+      right: '8px',
+      width: '24px',
+      height: '24px',
+      borderRadius: '50%',
+      border: 'none',
+      backgroundColor: '#ef4444',
+      color: 'white',
+      cursor: 'pointer',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      fontSize: '12px',
+      opacity: 0,
+      transition: 'opacity 0.2s ease',
+      zIndex: 10,
     },
     emptyState: {
       textAlign: 'center' as const,
@@ -222,6 +279,7 @@ const Wardrobe: React.FC<WardrobeProps> = ({
         onAboutUsClick={onAboutUsClick}
         onLogoClick={onLogoClick}
         onOutfitClick={onOutfitClick}
+        onWardrobeClick={onWardrobeClick}
       />
       
       <div style={styles.container}>
@@ -300,6 +358,34 @@ const Wardrobe: React.FC<WardrobeProps> = ({
           </div>
         )}
 
+        {/* Delete Error Display */}
+        {deleteError && (
+          <div style={{
+            background: '#fee2e2',
+            border: '1px solid #fecaca',
+            borderRadius: '12px',
+            padding: '1rem',
+            margin: '0 2rem 2rem 2rem',
+            color: '#dc2626',
+          }}>
+            {deleteError}
+          </div>
+        )}
+
+        {/* Success Message Display */}
+        {successMessage && (
+          <div style={{
+            background: '#d1fae5',
+            border: '1px solid #a7f3d0',
+            borderRadius: '12px',
+            padding: '1rem',
+            margin: '0 2rem 2rem 2rem',
+            color: '#065f46',
+          }}>
+            {successMessage}
+          </div>
+        )}
+
         {/* Main Wardrobe Content */}
         <div style={styles.mainContent}>
           {/* Header */}
@@ -350,13 +436,27 @@ const Wardrobe: React.FC<WardrobeProps> = ({
                       e.currentTarget.style.transform = 'translateY(-4px)';
                       e.currentTarget.style.boxShadow = '0 8px 25px rgba(0, 0, 0, 0.1)';
                       e.currentTarget.style.borderColor = '#667eea';
+                      const deleteBtn = e.currentTarget.querySelector('[data-delete-btn]') as HTMLElement;
+                      if (deleteBtn) deleteBtn.style.opacity = '1';
                     }}
                     onMouseLeave={(e) => {
                       e.currentTarget.style.transform = 'translateY(0)';
                       e.currentTarget.style.boxShadow = 'none';
                       e.currentTarget.style.borderColor = '#e2e8f0';
+                      const deleteBtn = e.currentTarget.querySelector('[data-delete-btn]') as HTMLElement;
+                      if (deleteBtn) deleteBtn.style.opacity = '0';
                     }}
                   >
+                    {/* Delete button */}
+                    <button
+                      data-delete-btn
+                      style={styles.deleteButton}
+                      onClick={(e) => handleDeleteItem(item.id, item.details?.name || `${category} Item`, e)}
+                      title="Delete item"
+                    >
+                      <Trash2 size={12} />
+                    </button>
+
                     <div style={{
                       width: '120px',
                       height: '120px',
@@ -428,6 +528,15 @@ const Wardrobe: React.FC<WardrobeProps> = ({
               </button>
             </div>
           )}
+        </div>
+      
+        {/* All Outfits Section */}
+        <div style={{ marginTop: '2rem' }}>
+          <Outfits
+            maxHeight="500px"
+            showHeader={true}
+            getImageUrl={getImageUrl}
+          />
         </div>
       </div>
 
