@@ -20,9 +20,11 @@ interface AboutUsProps {
   onLoginClick: () => void;
   onAboutUsClick: () => void;
   onLogoClick?: () => void;
+  onOutfitClick?: () => void;
+  onWardrobeClick?: () => void;
 }
 
-const AboutUs: React.FC<AboutUsProps> = ({ onBackToDashboard, onLoginClick, onAboutUsClick, onLogoClick }) => {
+const AboutUs: React.FC<AboutUsProps> = ({ onBackToDashboard, onLoginClick, onAboutUsClick, onLogoClick, onOutfitClick, onWardrobeClick }) => {
   const [screenSize, setScreenSize] = useState({
     width: typeof window !== 'undefined' ? window.innerWidth : 1200,
     height: typeof window !== 'undefined' ? window.innerHeight : 800
@@ -371,7 +373,13 @@ const AboutUs: React.FC<AboutUsProps> = ({ onBackToDashboard, onLoginClick, onAb
 
   return (
     <>
-      <Header onLoginClick={onLoginClick} onAboutUsClick={onAboutUsClick} onLogoClick={onLogoClick} />
+      <Header 
+        onLoginClick={onLoginClick} 
+        onAboutUsClick={onAboutUsClick} 
+        onLogoClick={onLogoClick} 
+        onOutfitClick={onOutfitClick}
+        onWardrobeClick={onWardrobeClick}
+      />
       <main style={{
         marginTop: '120px',
         marginBottom: '120px',
