@@ -10,13 +10,16 @@ import {
   Calendar,
   BarChart3,
   RefreshCw,
+  Eye,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { config } from '../../config';
+import ItemDetailsModal from './outfits/itemDetailsModal';
 
 interface DashboardProps {
   onUploadClick: () => void;
   onOutfitClick: () => void;
+  onWardrobeClick?: () => void;
 }
 
 interface RecentUpload {
@@ -30,7 +33,7 @@ interface RecentUpload {
   };
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ onUploadClick, onOutfitClick }) => {
+const Dashboard: React.FC<DashboardProps> = ({ onUploadClick, onOutfitClick, onWardrobeClick = () => {} }) => {
   const { user } = useAuth();
   const [screenSize, setScreenSize] = useState({
     width: typeof window !== 'undefined' ? window.innerWidth : 1200,
@@ -39,6 +42,10 @@ const Dashboard: React.FC<DashboardProps> = ({ onUploadClick, onOutfitClick }) =
   const [recentUploads, setRecentUploads] = useState<RecentUpload[]>([]); // stores an array of recent uploads
   const [loading, setLoading] = useState(true); // loading state when fetching recent uploads
   const [outfitsCount, setOutfitsCount] = useState(0); // stores the actual number of outfits created
+  
+  // Modal state for item details
+  const [showItemDetailsModal, setShowItemDetailsModal] = useState(false);
+  const [selectedItemForDetails, setSelectedItemForDetails] = useState<RecentUpload | null>(null);
 
   useEffect(() => {
     const handleResize = () => {
@@ -400,6 +407,18 @@ const Dashboard: React.FC<DashboardProps> = ({ onUploadClick, onOutfitClick }) =
     },
   };
 
+  // Helper function to open item details modal
+  const handleItemDetailsClick = (upload: RecentUpload) => {
+    setSelectedItemForDetails(upload);
+    setShowItemDetailsModal(true);
+  };
+
+  // Helper function to close item details modal
+  const handleCloseItemDetailsModal = () => {
+    setShowItemDetailsModal(false);
+    setSelectedItemForDetails(null);
+  };
+
   return (
     <div style={styles.container}>
       {/* Welcome Section */}
@@ -537,6 +556,26 @@ const Dashboard: React.FC<DashboardProps> = ({ onUploadClick, onOutfitClick }) =
                   </div>
                   <div style={styles.itemCategory}>{upload.item_info.category}</div>
                   <div style={styles.itemTime}>{formatTimeAgo(upload.item_info.timestamp)}</div>
+                  <button 
+                    onClick={() => handleItemDetailsClick(upload)}
+                    style={{
+                      marginTop: '0.5rem',
+                      padding: '0.5rem 1rem',
+                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                      border: 'none',
+                      borderRadius: '8px',
+                      color: 'white',
+                      fontWeight: '600',
+                      cursor: 'pointer',
+                      fontSize: '0.8rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '0.5rem',
+                    }}
+                  >
+                    <Eye size={14} /> Details
+                  </button>
                 </div>
               ))}
             </div>
@@ -634,6 +673,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onUploadClick, onOutfitClick }) =
       <div style={styles.navigationSection}>
         <div 
           style={styles.navCard}
+          onClick={onWardrobeClick}
           onMouseEnter={(e) => {
             e.currentTarget.style.transform = 'translateY(-4px)';
             e.currentTarget.style.boxShadow = '0 8px 30px rgba(0, 0, 0, 0.1)';
@@ -646,7 +686,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onUploadClick, onOutfitClick }) =
           <div style={styles.navIcon}>
             <Grid3X3 size={24} color="white" />
           </div>
-          <div style={styles.navTitle}>All Items</div>
+          <div style={styles.navTitle}>Wardrobe</div>
           <div style={styles.navDescription}>Browse your complete wardrobe</div>
         </div>
 
@@ -705,6 +745,16 @@ const Dashboard: React.FC<DashboardProps> = ({ onUploadClick, onOutfitClick }) =
           <div style={styles.navDescription}>Plan your weekly outfits</div>
         </div>
       </div>
+
+             {/* Item Details Modal */}
+       {selectedItemForDetails && (
+         <ItemDetailsModal
+           isOpen={showItemDetailsModal}
+           onClose={handleCloseItemDetailsModal}
+           item={selectedItemForDetails.item_info}
+           getImageUrl={getImageUrl}
+         />
+       )}
     </div>
   );
 };
