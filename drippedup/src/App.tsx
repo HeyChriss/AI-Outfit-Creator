@@ -6,6 +6,7 @@ import Header from './components/layout/Header'
 import NewItem from './components/pages/newItem/NewItem'
 import AboutUs from './components/pages/AboutUs'  
 import Outfit from './components/pages/outfits/Outfit'
+import Wardrobe from './components/pages/Wardrobe'
 import LoginPage from './components/auth/LoginPage'
 import SignUpPage from './components/auth/SignUpPage'
 import LandingPage from './components/layout/LandingPage'
@@ -13,7 +14,7 @@ import Dashboard from './components/pages/Dashboard'
 import { useAuth } from './contexts/AuthContext'
 
 type AuthView = 'login' | 'signup' | null;
-type CurrentView = 'landing' | 'dashboard' | 'newItem' | 'aboutUs' | 'outfits';
+type CurrentView = 'landing' | 'dashboard' | 'newItem' | 'aboutUs' | 'outfits' | 'wardrobe';
 
 function App() {
   const [currentView, setCurrentView] = useState<CurrentView>('landing')
@@ -24,7 +25,7 @@ function App() {
   React.useEffect(() => {
     if (user && currentView === 'landing') {
       setCurrentView('dashboard')
-    } else if (!user && (currentView === 'dashboard' || currentView === 'newItem' || currentView === 'outfits')) {
+    } else if (!user && (currentView === 'dashboard' || currentView === 'newItem' || currentView === 'outfits' || currentView === 'wardrobe')) {
       setCurrentView('landing')
     }
   }, [user, currentView])
@@ -100,6 +101,21 @@ function App() {
         onLoginClick={() => setAuthView('login')}
         onAboutUsClick={() => setCurrentView('aboutUs')}
         onLogoClick={() => setCurrentView('landing')}
+        onWardrobeClick={() => setCurrentView('wardrobe')}
+        onBackToDashboard={() => setCurrentView('dashboard')}
+      />
+    );
+  }
+
+  if (currentView === 'wardrobe') {
+    return (
+      <Wardrobe 
+        onUploadClick={() => setCurrentView('newItem')}
+        onOutfitClick={() => setCurrentView('outfits')}
+        onLoginClick={() => setAuthView('login')}
+        onAboutUsClick={() => setCurrentView('aboutUs')}
+        onLogoClick={() => setCurrentView('landing')}
+        onBackToDashboard={() => setCurrentView('dashboard')}
       />
     );
   }
@@ -124,6 +140,7 @@ function App() {
           onAboutUsClick={() => setCurrentView('aboutUs')}
           onLogoClick={() => setCurrentView('landing')}
           onOutfitClick={() => setAuthView('login')} 
+          onWardrobeClick={() => setAuthView('login')}
         />
         <main
           style={{
@@ -152,6 +169,7 @@ function App() {
         onAboutUsClick={() => setCurrentView('aboutUs')}
         onLogoClick={() => setCurrentView('landing')}
         onOutfitClick={() => setCurrentView('outfits')} // Navigate to outfits for authenticated users
+        onWardrobeClick={() => setCurrentView('wardrobe')}
       />
       <main
         style={{
@@ -164,6 +182,7 @@ function App() {
         <Dashboard 
           onUploadClick={() => setCurrentView('newItem')} 
           onOutfitClick={() => setCurrentView('outfits')}
+          onWardrobeClick={() => setCurrentView('wardrobe')}
         />
       </main>
       <Footer onAboutUsClick={() => setCurrentView('aboutUs')} />
