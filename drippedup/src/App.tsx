@@ -90,6 +90,8 @@ function App() {
         onLoginClick={() => setAuthView('login')}
         onAboutUsClick={() => setCurrentView('aboutUs')}
         onLogoClick={() => setCurrentView('landing')}
+        onOutfitClick={() => setCurrentView('outfits')}
+        onWardrobeClick={() => setCurrentView('wardrobe')}
       />
     );
   }
@@ -101,6 +103,7 @@ function App() {
         onLoginClick={() => setAuthView('login')}
         onAboutUsClick={() => setCurrentView('aboutUs')}
         onLogoClick={() => setCurrentView('landing')}
+        onOutfitClick={() => setCurrentView('outfits')}
         onWardrobeClick={() => setCurrentView('wardrobe')}
         onBackToDashboard={() => setCurrentView('dashboard')}
       />
@@ -115,6 +118,7 @@ function App() {
         onLoginClick={() => setAuthView('login')}
         onAboutUsClick={() => setCurrentView('aboutUs')}
         onLogoClick={() => setCurrentView('landing')}
+        onWardrobeClick={() => setCurrentView('wardrobe')}
         onBackToDashboard={() => setCurrentView('dashboard')}
       />
     );
@@ -127,6 +131,8 @@ function App() {
         onLoginClick={() => setAuthView('login')}
         onAboutUsClick={() => setCurrentView('aboutUs')}
         onLogoClick={() => setCurrentView('landing')}
+        onOutfitClick={() => setCurrentView('outfits')}
+        onWardrobeClick={() => setCurrentView('wardrobe')}
       />
     );
   }

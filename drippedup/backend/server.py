@@ -14,7 +14,8 @@ from storage import (
     get_all_items_grouped_by_category, get_metadata, get_picture, look_items, 
     get_item_info, delete_by_id, save_outfit, get_outfit_with_items, 
     get_recent_outfits, get_all_outfits_with_items, get_outfit_info, 
-    get_all_outfits, get_all_outfit_tags, get_outfits_by_tag, delete_outfit
+    get_all_outfits, get_all_outfit_tags, get_outfits_by_tag, delete_outfit,
+    METADATA_FILE
 )
 import json
 from fashion import FashionCompatibility
@@ -472,6 +473,37 @@ async def get_outfits_by_tag_endpoint(tag: str):
     except Exception as e:
         logger.error(f"Error getting outfits by tag {tag}: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to get outfits by tag: {str(e)}")
+
+@app.delete("/item/{item_id}")
+async def delete_item_endpoint(item_id: str):
+    """
+    Delete an item by ID.
+    """
+    try:
+        # Check if item exists first
+        item_info = get_item_info(item_id)
+        if item_info is None:
+            raise HTTPException(status_code=404, detail="Item not found")
+        
+        success = delete_by_id(item_id, METADATA_FILE)
+        if not success:
+            raise HTTPException(status_code=404, detail="Item not found")
+        
+        # Also delete the image file
+        try:
+            image_path = get_picture(item_id)
+            if image_path and os.path.exists(image_path):
+                os.remove(image_path)
+                logger.info(f"Deleted image file: {image_path}")
+        except Exception as e:
+            logger.warning(f"Failed to delete image file for item {item_id}: {e}")
+        
+        return {"message": "Item deleted successfully", "id": item_id}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error deleting item {item_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to delete item: {str(e)}")
 
 @app.delete("/outfit/{outfit_id}")
 async def delete_outfit_endpoint(outfit_id: str):

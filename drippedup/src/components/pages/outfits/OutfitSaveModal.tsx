@@ -216,6 +216,7 @@ const OutfitSaveModal: React.FC<OutfitSaveModalProps> = ({
                 outline: 'none',
                 transition: 'border-color 0.2s',
                 backgroundColor: 'white',
+                color: 'black',
               }}
               onFocus={(e) => e.target.style.borderColor = '#667eea'}
               onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
@@ -247,6 +248,7 @@ const OutfitSaveModal: React.FC<OutfitSaveModalProps> = ({
                 resize: 'vertical',
                 transition: 'border-color 0.2s',
                 backgroundColor: 'white',
+                color: 'black',
               }}
               onFocus={(e) => e.target.style.borderColor = '#667eea'}
               onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
@@ -282,6 +284,7 @@ const OutfitSaveModal: React.FC<OutfitSaveModalProps> = ({
                   borderRadius: '8px',
                   fontSize: '0.875rem',
                   outline: 'none',
+                  color: 'black',
                 }}
               />
               <button

@@ -33,6 +33,23 @@ interface RecentUpload {
   };
 }
 
+interface OutfitItem {
+  id: string;
+  category: string;
+  image: string;
+  details: any;
+  timestamp: string;
+}
+
+interface RecentOutfit {
+  id: string;
+  name: string;
+  description: string;
+  tags: string[];
+  created_at: string;
+  items: OutfitItem[];
+}
+
 const Dashboard: React.FC<DashboardProps> = ({ onUploadClick, onOutfitClick, onWardrobeClick = () => {} }) => {
   const { user } = useAuth();
   const [screenSize, setScreenSize] = useState({
@@ -42,6 +59,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onUploadClick, onOutfitClick, onW
   const [recentUploads, setRecentUploads] = useState<RecentUpload[]>([]); // stores an array of recent uploads
   const [loading, setLoading] = useState(true); // loading state when fetching recent uploads
   const [outfitsCount, setOutfitsCount] = useState(0); // stores the actual number of outfits created
+  const [recentOutfits, setRecentOutfits] = useState<RecentOutfit[]>([]); // stores recent outfits
+  const [outfitsLoading, setOutfitsLoading] = useState(true); // loading state for outfits
   
   // Modal state for item details
   const [showItemDetailsModal, setShowItemDetailsModal] = useState(false);
@@ -97,6 +116,26 @@ const Dashboard: React.FC<DashboardProps> = ({ onUploadClick, onOutfitClick, onW
     fetchOutfitsCount();
   }, []);
 
+  useEffect(() => {
+    const fetchRecentOutfits = async () => { // fetches recent outfits from the backend
+      try {
+        const response = await fetch(`${config.API_BASE_URL}/outfits/recent/3`); // fetches 3 recent outfits
+        if (response.ok) {
+          const data = await response.json(); // parses the response as JSON
+          setRecentOutfits(data.outfits || []); // sets the recent outfits
+        } else {
+          console.error('Failed to fetch recent outfits');
+        }
+      } catch (error) {
+        console.error('Error fetching recent outfits:', error);
+      } finally {
+        setOutfitsLoading(false); // sets loading to false
+      }
+    };
+
+    fetchRecentOutfits();
+  }, []);
+
   const isMobile = screenSize.width < 768;
   const isTablet = screenSize.width >= 768 && screenSize.width < 1024;
 
@@ -119,9 +158,10 @@ const Dashboard: React.FC<DashboardProps> = ({ onUploadClick, onOutfitClick, onW
     return `${config.API_BASE_URL}/images/${imagePath}`;
   };
 
-  // Function to refresh recent uploads and outfits count if the user clicks the refresh button
+  // Function to refresh recent uploads, outfits count, and recent outfits if the user clicks the refresh button
   const refreshRecentUploads = async () => {
     setLoading(true);
+    setOutfitsLoading(true);
     try {
       // Fetch recent uploads
       const uploadsResponse = await fetch(`${config.API_BASE_URL}/recent-uploads`);
@@ -140,18 +180,31 @@ const Dashboard: React.FC<DashboardProps> = ({ onUploadClick, onOutfitClick, onW
       } else {
         console.error('Failed to fetch outfits count');
       }
+
+      // Fetch recent outfits
+      const recentOutfitsResponse = await fetch(`${config.API_BASE_URL}/outfits/recent/3`);
+      if (recentOutfitsResponse.ok) {
+        const recentOutfitsData = await recentOutfitsResponse.json();
+        setRecentOutfits(recentOutfitsData.outfits || []);
+      } else {
+        console.error('Failed to fetch recent outfits');
+      }
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
       setLoading(false);
+      setOutfitsLoading(false);
     }
   };
 
-  const outfitSuggestions = [
-    { id: 1, name: 'Casual Friday', items: ['👕', '👖', '👟'], likes: 24 },
-    { id: 2, name: 'Date Night', items: ['👗', '👠', '👜'], likes: 18 },
-    { id: 3, name: 'Business Meeting', items: ['👔', '👔', '👞'], likes: 32 },
-  ];
+  // Helper function to format outfit creation date
+  const formatOutfitDate = (timestamp: string) => {
+    const date = new Date(timestamp);
+    return date.toLocaleDateString('en-US', { 
+      month: 'short', 
+      day: 'numeric' 
+    });
+  };
 
   const stats = {
     totalItems: recentUploads.length || 0,
@@ -310,17 +363,19 @@ const Dashboard: React.FC<DashboardProps> = ({ onUploadClick, onOutfitClick, onW
     outfitCard: {
       background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
       borderRadius: '16px',
-      padding: '1.25rem',
+      padding: '2.25rem',
       marginBottom: '1rem',
       transition: 'all 0.3s ease',
       cursor: 'pointer',
       border: '1px solid rgba(226, 232, 240, 0.5)',
+      position: 'relative' as const,
     },
     outfitItems: {
       display: 'flex',
       gap: '0.25rem',
       marginBottom: '0.75rem',
       fontSize: '1.25rem',
+      justifyContent: 'center' as const,
     },
     outfitName: {
       fontSize: '1rem',
@@ -604,39 +659,149 @@ const Dashboard: React.FC<DashboardProps> = ({ onUploadClick, onOutfitClick, onW
 
         {/* Sidebar */}
         <div>
-          {/* Outfit Suggestions */}
+          {/* Recent Outfits */}
           <div style={styles.section}>
             <div style={styles.sectionHeader}>
               <h2 style={styles.sectionTitle}>
                 <Sparkles size={20} />
-                Outfit Ideas
+                Recent Outfits
               </h2>
             </div>
-            {outfitSuggestions.map((outfit) => (
-              <div 
-                key={outfit.id}
-                style={styles.outfitCard}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-2px)';
-                  e.currentTarget.style.boxShadow = '0 6px 20px rgba(0, 0, 0, 0.1)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = 'none';
-                }}
-              >
-                <div style={styles.outfitItems}>
-                  {outfit.items.map((item, index) => (
-                    <span key={index}>{item}</span>
-                  ))}
-                </div>
-                <div style={styles.outfitName}>{outfit.name}</div>
-                <div style={styles.outfitLikes}>
-                  <Star size={14} fill="#fbbf24" color="#fbbf24" />
-                  {outfit.likes} likes
-                </div>
+            {outfitsLoading ? (
+              <div style={styles.emptyState}>
+                <div style={styles.emptyIcon}>⏳</div>
+                <p>Loading recent outfits...</p>
               </div>
-            ))}
+            ) : recentOutfits.length > 0 ? (
+              recentOutfits.map((outfit) => (
+                <div 
+                  key={outfit.id}
+                  style={styles.outfitCard}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.boxShadow = '0 6px 20px rgba(0, 0, 0, 0.1)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = 'none';
+                  }}
+                >
+                  {/* Tags in upper left corner */}
+                  <div style={{
+                    position: 'absolute',
+                    top: '8px',
+                    left: '8px',
+                    display: 'flex',
+                    gap: '4px',
+                    flexWrap: 'wrap',
+                    zIndex: 10,
+                  }}>
+                    {outfit.tags.map((tag, index) => (
+                      <span
+                        key={index}
+                        style={{
+                          backgroundColor: '#667eea',
+                          color: 'white',
+                          fontSize: '0.7rem',
+                          fontWeight: '600',
+                          padding: '2px 6px',
+                          borderRadius: '4px',
+                          textTransform: 'uppercase',
+                        }}
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                  
+                  {/* Outfit items preview */}
+                  <div style={styles.outfitItems}>
+                    {outfit.items.slice(0, 3).map((item, index) => (
+                      <div
+                        key={index}
+                        style={{
+                          width: '30px',
+                          height: '30px',
+                          borderRadius: '4px',
+                          overflow: 'hidden',
+                          backgroundColor: '#f1f5f9',
+                          border: '1px solid #e2e8f0',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          marginRight: '4px',
+                        }}
+                      >
+                        <img
+                          src={getImageUrl(item.image)}
+                          alt={item.details?.name || item.category}
+                          style={{
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover',
+                          }}
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.style.display = 'none';
+                            const parent = target.parentElement;
+                            if (parent) {
+                              parent.innerHTML = '<span style="font-size: 1rem;">👕</span>';
+                            }
+                          }}
+                        />
+                      </div>
+                    ))}
+                    {outfit.items.length > 3 && (
+                      <span style={{
+                        color: '#64748b',
+                        fontSize: '0.75rem',
+                        marginLeft: '4px',
+                      }}>
+                        +{outfit.items.length - 3} more
+                      </span>
+                    )}
+                  </div>
+                  
+                  {/* Outfit name centered below */}
+                  <div style={{
+                    ...styles.outfitName,
+                    textAlign: 'center',
+                    marginTop: '8px',
+                  }}>
+                    {outfit.name}
+                  </div>
+                  
+                  {/* Date created */}
+                  <div style={{
+                    ...styles.outfitLikes,
+                    justifyContent: 'center',
+                  }}>
+                    <Calendar size={14} />
+                    {formatOutfitDate(outfit.created_at)}
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div style={styles.emptyState}>
+                <div style={styles.emptyIcon}>✨</div>
+                <p>No outfits created yet. Start mixing and matching!</p>
+                <button 
+                  onClick={onOutfitClick}
+                  style={{
+                    marginTop: '1rem',
+                    padding: '0.75rem 1.5rem',
+                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    border: 'none',
+                    borderRadius: '8px',
+                    color: 'white',
+                    fontWeight: '600',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Create Your First Outfit
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Stats */}
