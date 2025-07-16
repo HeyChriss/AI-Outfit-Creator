@@ -8,9 +8,10 @@ interface HeaderProps {
   onAboutUsClick?: () => void;
   onLogoClick?: () => void;
   onOutfitClick?: () => void;
+  onWardrobeClick?: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ onLoginClick, onAboutUsClick, onLogoClick, onOutfitClick }) => {
+const Header: React.FC<HeaderProps> = ({ onLoginClick, onAboutUsClick, onLogoClick, onOutfitClick, onWardrobeClick }) => {
   const { user, signOut } = useAuth();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
@@ -256,6 +257,22 @@ const Header: React.FC<HeaderProps> = ({ onLoginClick, onAboutUsClick, onLogoCli
           >
             Outfits
           </a>
+          {user && (
+            <a 
+              style={styles.navLink}
+              onClick={onWardrobeClick}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = '#667eea';
+                e.currentTarget.style.transform = 'translateY(-1px)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = '#64748b';
+                e.currentTarget.style.transform = 'translateY(0)';
+              }}
+            >
+              Wardrobe
+            </a>
+          )}
           <a 
             style={styles.navLink}
             onMouseEnter={(e) => {
