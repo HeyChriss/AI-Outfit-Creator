@@ -2,12 +2,9 @@ import React, { useState, useEffect } from 'react';
 import {
   Sparkles,
   Calendar,
-  Eye,
-  Wand2,
   RefreshCw,
   Trash2,
   Tag,
-  Heart,
 } from 'lucide-react';
 import { config } from '../../../config';
 import { useAuth } from '../../../contexts/AuthContext'; // Import useAuth

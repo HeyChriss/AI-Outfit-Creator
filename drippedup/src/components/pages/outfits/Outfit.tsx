@@ -278,10 +278,10 @@ const Outfit: React.FC<OutfitProps> = ({
     onWardrobeClick();
   };
 
-  const handleItemCardClick = (item: any) => {
-    setSelectedItemForDetails(item);
-    setShowItemDetails(true);
-  };
+  // const handleItemCardClick = (item: any) => {
+  //   setSelectedItemForDetails(item);
+  //   setShowItemDetails(true);
+  // };
 
   const handleShowItemDetails = () => {
     setShowItemDetails(false);
