@@ -2,32 +2,18 @@ import React, { useState, useEffect } from 'react';
 import {
   Sparkles,
   Calendar,
-<<<<<<< HEAD
   RefreshCw,
   Trash2,
   Tag,
 } from 'lucide-react';
 import { config } from '../../../config';
 import { useAuth } from '../../../contexts/AuthContext'; // Import useAuth
-=======
-  Eye,
-  Wand2,
-  RefreshCw,
-  Trash2,
-  Tag,
-  Heart,
-} from 'lucide-react';
-import { config } from '../../../config';
->>>>>>> 5730abaf8b68f3794e46d984e713d0fb837cc5f4
 
 interface OutfitItem {
   id: string;
   category: string;
   image: string;
-<<<<<<< HEAD
   image_url?: string;
-=======
->>>>>>> 5730abaf8b68f3794e46d984e713d0fb837cc5f4
   details: any;
   timestamp: string;
 }
@@ -61,7 +47,6 @@ const Outfits: React.FC<OutfitsProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [selectedOutfit, setSelectedOutfit] = useState<OutfitData | null>(null);
   const [showOutfitModal, setShowOutfitModal] = useState(false);
-<<<<<<< HEAD
   const { user } = useAuth(); // Get user from auth context
 
   // Fetch all outfits for the logged-in user
@@ -78,15 +63,6 @@ const Outfits: React.FC<OutfitsProps> = ({
     try {
       // Add user_id as a query parameter to the fetch request
       const response = await fetch(`${config.API_BASE_URL}/outfits?user_id=${user.id}`);
-=======
-
-  // Fetch all outfits
-  const fetchOutfits = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await fetch(`${config.API_BASE_URL}/outfits`);
->>>>>>> 5730abaf8b68f3794e46d984e713d0fb837cc5f4
       if (response.ok) {
         const data = await response.json();
         setOutfits(data.outfits || []);
@@ -101,35 +77,10 @@ const Outfits: React.FC<OutfitsProps> = ({
     }
   };
 
-<<<<<<< HEAD
   // Re-fetch outfits when the user changes (e.g., on login)
   useEffect(() => {
     fetchOutfits();
   }, [user?.id]);
-=======
-  useEffect(() => {
-    fetchOutfits();
-  }, []);
-
-  // Format outfit creation date
-  const formatOutfitDate = (timestamp: string) => {
-    const date = new Date(timestamp);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    });
-  };
-
-  // Handle outfit card click
-  const handleOutfitClick = (outfit: OutfitData) => {
-    setSelectedOutfit(outfit);
-    setShowOutfitModal(true);
-    if (onOutfitSelect) {
-      onOutfitSelect(outfit);
-    }
-  };
->>>>>>> 5730abaf8b68f3794e46d984e713d0fb837cc5f4
 
   // Handle outfit deletion
   const handleDeleteOutfit = async (outfitId: string, e: React.MouseEvent) => {
@@ -151,7 +102,6 @@ const Outfits: React.FC<OutfitsProps> = ({
     }
   };
 
-<<<<<<< HEAD
   // ... rest of the component remains the same
   // (formatOutfitDate, handleOutfitClick, renderOutfitItemPreview, styles, JSX)
 
@@ -208,41 +158,6 @@ const Outfits: React.FC<OutfitsProps> = ({
     />
   </div>
 );
-=======
-  // Render outfit item preview
-  const renderOutfitItemPreview = (item: OutfitItem, size: string = '40px') => (
-    <div style={{
-      width: size,
-      height: size,
-      borderRadius: '6px',
-      overflow: 'hidden',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: '#f1f5f9',
-      border: '1px solid #e2e8f0',
-      marginRight: '4px',
-    }}>
-      <img
-        src={getImageUrl(item.image)}
-        alt={item.details?.name || item.category}
-        style={{
-          width: '100%',
-          height: '100%',
-          objectFit: 'cover',
-        }}
-        onError={(e) => {
-          const target = e.target as HTMLImageElement;
-          target.style.display = 'none';
-          const parent = target.parentElement;
-          if (parent) {
-            parent.innerHTML = '<span style="font-size: 1.2rem;">👕</span>';
-          }
-        }}
-      />
-    </div>
-  );
->>>>>>> 5730abaf8b68f3794e46d984e713d0fb837cc5f4
 
   const styles = {
     container: {
@@ -665,9 +580,4 @@ const Outfits: React.FC<OutfitsProps> = ({
     </div>
   );
 };
-<<<<<<< HEAD
 export default Outfits;
-=======
-
-export default Outfits; 
->>>>>>> 5730abaf8b68f3794e46d984e713d0fb837cc5f4
