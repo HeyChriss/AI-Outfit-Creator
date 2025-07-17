@@ -4,19 +4,21 @@ import {
   Shirt, 
   TrendingUp, 
   Clock, 
-  Star, 
   Grid3X3,
   Sparkles,
   Calendar,
   BarChart3,
   RefreshCw,
+  Eye,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { config } from '../../config';
+import ItemDetailsModal from './outfits/itemDetailsModal';
 
 interface DashboardProps {
   onUploadClick: () => void;
   onOutfitClick: () => void;
+  onWardrobeClick?: () => void;
 }
 
 interface RecentUpload {
@@ -31,16 +33,42 @@ interface RecentUpload {
   };
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ onUploadClick, onOutfitClick }) => {
+interface OutfitItem {
+  id: string;
+  category: string;
+  image: string;
+  image_url?: string; // For Supabase items
+  details: any;
+  timestamp: string;
+}
+
+interface RecentOutfit {
+  id: string;
+  name: string;
+  description: string;
+  tags: string[];
+  created_at: string;
+  items: OutfitItem[];
+}
+
+const Dashboard: React.FC<DashboardProps> = ({ onUploadClick, onOutfitClick, onWardrobeClick = () => {} }) => {
   const { user } = useAuth();
   const [screenSize, setScreenSize] = useState({
     width: typeof window !== 'undefined' ? window.innerWidth : 1200,
     height: typeof window !== 'undefined' ? window.innerHeight : 800
   });
+  
+  // Combined state - keeping both sets of features
   const [recentUploads, setRecentUploads] = useState<RecentUpload[]>([]);
   const [loading, setLoading] = useState(true);
   const [outfitsCount, setOutfitsCount] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [recentOutfits, setRecentOutfits] = useState<RecentOutfit[]>([]);
+  const [outfitsLoading, setOutfitsLoading] = useState(true);
+  
+  // Modal state for item details
+  const [showItemDetailsModal, setShowItemDetailsModal] = useState(false);
+  const [selectedItemForDetails, setSelectedItemForDetails] = useState<RecentUpload | null>(null);
 
   useEffect(() => {
     const handleResize = () => {
@@ -96,28 +124,55 @@ const Dashboard: React.FC<DashboardProps> = ({ onUploadClick, onOutfitClick }) =
     }
   };
 
+  const fetchRecentOutfits = async () => {
+    if (!user?.id) {
+      console.log('No user ID available for fetching recent outfits');
+      setRecentOutfits([]);
+      return;
+    }
+
+    try {
+      const response = await fetch(`${config.API_BASE_URL}/outfits/recent/3?user_id=${user.id}`);
+      if (response.ok) {
+        const data = await response.json();
+        setRecentOutfits(data.outfits || []);
+      } else {
+        console.error('Failed to fetch recent outfits');
+      }
+    } catch (error) {
+      console.error('Error fetching recent outfits:', error);
+    } finally {
+      setOutfitsLoading(false);
+    }
+  };
+
   // Initial data fetch
   useEffect(() => {
     const fetchData = async () => {
       if (user?.id) {
         setLoading(true);
+        setOutfitsLoading(true);
         setError(null);
         
         try {
           await Promise.all([
             fetchRecentUploads(),
-            fetchOutfitsCount()
+            fetchOutfitsCount(),
+            fetchRecentOutfits()
           ]);
         } catch (err) {
           console.error('Error fetching dashboard data:', err);
           setError('Failed to load dashboard data');
         } finally {
           setLoading(false);
+          setOutfitsLoading(false);
         }
       } else {
         setLoading(false);
+        setOutfitsLoading(false);
         setRecentUploads([]);
         setOutfitsCount(0);
+        setRecentOutfits([]);
       }
     };
 
@@ -141,7 +196,17 @@ const Dashboard: React.FC<DashboardProps> = ({ onUploadClick, onOutfitClick }) =
     return `${diffInDays} days ago`;
   };
 
-  // Helper function to get image URL
+  // Helper function to get image URL for modal (takes string path)
+  const getImageUrlForModal = (imagePath: string) => {
+    // Check if it's already a full URL
+    if (imagePath && imagePath.startsWith('http')) {
+      return imagePath;
+    }
+    // Otherwise construct local API URL
+    return `${config.API_BASE_URL}/images/${imagePath}`;
+  };
+
+  // Helper function to get image URL for uploads (takes RecentUpload object)
   const getImageUrl = (upload: RecentUpload) => {
     // Check if it's a Supabase item with image_url
     if (upload.item_info.image_url) {
@@ -155,31 +220,49 @@ const Dashboard: React.FC<DashboardProps> = ({ onUploadClick, onOutfitClick }) =
     return `${config.API_BASE_URL}/images/${upload.item_info.image}`;
   };
 
-  // Function to refresh recent uploads and outfits count
+  // Combined refresh function with auth and user_id checks
   const refreshRecentUploads = async () => {
     if (!user?.id) return;
 
     setLoading(true);
+    setOutfitsLoading(true);
     setError(null);
     
     try {
       await Promise.all([
         fetchRecentUploads(),
-        fetchOutfitsCount()
+        fetchOutfitsCount(),
+        fetchRecentOutfits()
       ]);
     } catch (error) {
       console.error('Error refreshing data:', error);
       setError('Failed to refresh data');
     } finally {
       setLoading(false);
+      setOutfitsLoading(false);
     }
   };
 
-  const outfitSuggestions = [
-    { id: 1, name: 'Casual Friday', items: ['👕', '👖', '👟'], likes: 24 },
-    { id: 2, name: 'Date Night', items: ['👗', '👠', '👜'], likes: 18 },
-    { id: 3, name: 'Business Meeting', items: ['👔', '👔', '👞'], likes: 32 },
-  ];
+  // Helper function to format outfit creation date
+  const formatOutfitDate = (timestamp: string) => {
+    const date = new Date(timestamp);
+    return date.toLocaleDateString('en-US', { 
+      month: 'short', 
+      day: 'numeric' 
+    });
+  };
+
+  // Helper function to open item details modal
+  const handleItemDetailsClick = (upload: RecentUpload) => {
+    setSelectedItemForDetails(upload);
+    setShowItemDetailsModal(true);
+  };
+
+  // Helper function to close item details modal
+  const handleCloseItemDetailsModal = () => {
+    setShowItemDetailsModal(false);
+    setSelectedItemForDetails(null);
+  };
 
   const stats = {
     totalItems: recentUploads.length || 0,
@@ -338,17 +421,19 @@ const Dashboard: React.FC<DashboardProps> = ({ onUploadClick, onOutfitClick }) =
     outfitCard: {
       background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
       borderRadius: '16px',
-      padding: '1.25rem',
+      padding: '2.25rem',
       marginBottom: '1rem',
       transition: 'all 0.3s ease',
       cursor: 'pointer',
       border: '1px solid rgba(226, 232, 240, 0.5)',
+      position: 'relative' as const,
     },
     outfitItems: {
       display: 'flex',
       gap: '0.25rem',
       marginBottom: '0.75rem',
       fontSize: '1.25rem',
+      justifyContent: 'center' as const,
     },
     outfitName: {
       fontSize: '1rem',
@@ -612,6 +697,26 @@ const Dashboard: React.FC<DashboardProps> = ({ onUploadClick, onOutfitClick }) =
                   </div>
                   <div style={styles.itemCategory}>{upload.item_info.category}</div>
                   <div style={styles.itemTime}>{formatTimeAgo(upload.item_info.timestamp)}</div>
+                  <button 
+                    onClick={() => handleItemDetailsClick(upload)}
+                    style={{
+                      marginTop: '0.5rem',
+                      padding: '0.5rem 1rem',
+                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                      border: 'none',
+                      borderRadius: '8px',
+                      color: 'white',
+                      fontWeight: '600',
+                      cursor: 'pointer',
+                      fontSize: '0.8rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '0.5rem',
+                    }}
+                  >
+                    <Eye size={14} /> Details
+                  </button>
                 </div>
               ))}
             </div>
@@ -640,39 +745,149 @@ const Dashboard: React.FC<DashboardProps> = ({ onUploadClick, onOutfitClick }) =
 
         {/* Sidebar */}
         <div>
-          {/* Outfit Suggestions */}
+          {/* Recent Outfits */}
           <div style={styles.section}>
             <div style={styles.sectionHeader}>
               <h2 style={styles.sectionTitle}>
                 <Sparkles size={20} />
-                Outfit Ideas
+                Recent Outfits
               </h2>
             </div>
-            {outfitSuggestions.map((outfit) => (
-              <div 
-                key={outfit.id}
-                style={styles.outfitCard}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-2px)';
-                  e.currentTarget.style.boxShadow = '0 6px 20px rgba(0, 0, 0, 0.1)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = 'none';
-                }}
-              >
-                <div style={styles.outfitItems}>
-                  {outfit.items.map((item, index) => (
-                    <span key={index}>{item}</span>
-                  ))}
-                </div>
-                <div style={styles.outfitName}>{outfit.name}</div>
-                <div style={styles.outfitLikes}>
-                  <Star size={14} fill="#fbbf24" color="#fbbf24" />
-                  {outfit.likes} likes
-                </div>
+            {outfitsLoading ? (
+              <div style={styles.emptyState}>
+                <div style={styles.emptyIcon}>⏳</div>
+                <p>Loading recent outfits...</p>
               </div>
-            ))}
+            ) : recentOutfits.length > 0 ? (
+              recentOutfits.map((outfit) => (
+                <div 
+                  key={outfit.id}
+                  style={styles.outfitCard}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.boxShadow = '0 6px 20px rgba(0, 0, 0, 0.1)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = 'none';
+                  }}
+                >
+                  {/* Tags in upper left corner */}
+                  <div style={{
+                    position: 'absolute',
+                    top: '8px',
+                    left: '8px',
+                    display: 'flex',
+                    gap: '4px',
+                    flexWrap: 'wrap',
+                    zIndex: 10,
+                  }}>
+                    {outfit.tags.map((tag, index) => (
+                      <span
+                        key={index}
+                        style={{
+                          backgroundColor: '#667eea',
+                          color: 'white',
+                          fontSize: '0.7rem',
+                          fontWeight: '600',
+                          padding: '2px 6px',
+                          borderRadius: '4px',
+                          textTransform: 'uppercase',
+                        }}
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                  
+                  {/* Outfit items preview */}
+                  <div style={styles.outfitItems}>
+                    {outfit.items.slice(0, 3).map((item, index) => (
+                      <div
+                        key={index}
+                        style={{
+                          width: '30px',
+                          height: '30px',
+                          borderRadius: '4px',
+                          overflow: 'hidden',
+                          backgroundColor: '#f1f5f9',
+                          border: '1px solid #e2e8f0',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          marginRight: '4px',
+                        }}
+                      >
+                        <img
+                          src={item.image_url || `${config.API_BASE_URL}/images/${item.image}`}
+                          alt={item.details?.name || item.category}
+                          style={{
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover',
+                          }}
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.style.display = 'none';
+                            const parent = target.parentElement;
+                            if (parent) {
+                              parent.innerHTML = '<span style="font-size: 1rem;">👕</span>';
+                            }
+                          }}
+                        />
+                      </div>
+                    ))}
+                    {outfit.items.length > 3 && (
+                      <span style={{
+                        color: '#64748b',
+                        fontSize: '0.75rem',
+                        marginLeft: '4px',
+                      }}>
+                        +{outfit.items.length - 3} more
+                      </span>
+                    )}
+                  </div>
+                  
+                  {/* Outfit name centered below */}
+                  <div style={{
+                    ...styles.outfitName,
+                    textAlign: 'center',
+                    marginTop: '8px',
+                  }}>
+                    {outfit.name}
+                  </div>
+                  
+                  {/* Date created */}
+                  <div style={{
+                    ...styles.outfitLikes,
+                    justifyContent: 'center',
+                  }}>
+                    <Calendar size={14} />
+                    {formatOutfitDate(outfit.created_at)}
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div style={styles.emptyState}>
+                <div style={styles.emptyIcon}>✨</div>
+                <p>No outfits created yet. Start mixing and matching!</p>
+                <button 
+                  onClick={onOutfitClick}
+                  style={{
+                    marginTop: '1rem',
+                    padding: '0.75rem 1.5rem',
+                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    border: 'none',
+                    borderRadius: '8px',
+                    color: 'white',
+                    fontWeight: '600',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Create Your First Outfit
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Stats */}
@@ -709,6 +924,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onUploadClick, onOutfitClick }) =
       <div style={styles.navigationSection}>
         <div 
           style={styles.navCard}
+          onClick={onWardrobeClick}
           onMouseEnter={(e) => {
             e.currentTarget.style.transform = 'translateY(-4px)';
             e.currentTarget.style.boxShadow = '0 8px 30px rgba(0, 0, 0, 0.1)';
@@ -721,7 +937,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onUploadClick, onOutfitClick }) =
           <div style={styles.navIcon}>
             <Grid3X3 size={24} color="white" />
           </div>
-          <div style={styles.navTitle}>All Items</div>
+          <div style={styles.navTitle}>Wardrobe</div>
           <div style={styles.navDescription}>Browse your complete wardrobe</div>
         </div>
 
@@ -780,6 +996,16 @@ const Dashboard: React.FC<DashboardProps> = ({ onUploadClick, onOutfitClick }) =
           <div style={styles.navDescription}>Plan your weekly outfits</div>
         </div>
       </div>
+
+      {/* Item Details Modal */}
+      {selectedItemForDetails && (
+        <ItemDetailsModal
+          isOpen={showItemDetailsModal}
+          onClose={handleCloseItemDetailsModal}
+          item={selectedItemForDetails.item_info}
+          getImageUrl={getImageUrlForModal}
+        />
+      )}
     </div>
   );
 };

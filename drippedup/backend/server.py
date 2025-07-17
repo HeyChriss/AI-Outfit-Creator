@@ -1,4 +1,4 @@
-# backend/server.py - Complete Supabase-only version
+# backend/server.py - Clean Supabase-only version
 from fastapi import FastAPI, File, UploadFile, HTTPException, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse

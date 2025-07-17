@@ -1,7 +1,7 @@
-// src/components/pages/outfits/hooks/useOutfitData.ts - FIXED
+// src/components/pages/outfits/hooks/useOutfitData.ts - FIXED with Auth
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../../../contexts/AuthContext';
-import config from '../../../../config';
+import { config } from '../../../../config';
 
 interface ClothingItem {
   id: string;
@@ -21,7 +21,7 @@ const useOutfitData = () => {
   const [groupedItems, setGroupedItems] = useState<GroupedItems>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { user } = useAuth();
+  const { user } = useAuth(); // Add auth integration
 
   const fetchCategories = async () => {
     if (!user?.id) {
@@ -83,6 +83,8 @@ const useOutfitData = () => {
   const refreshData = async () => {
     if (!user?.id) {
       setLoading(false);
+      setGroupedItems({});
+      setCategories([]);
       return;
     }
 

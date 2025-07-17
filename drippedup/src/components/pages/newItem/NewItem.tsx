@@ -24,9 +24,11 @@ interface NewItemProps {
   onLoginClick: () => void;
   onAboutUsClick?: () => void;
   onLogoClick?: () => void;
+  onOutfitClick?: () => void;
+  onWardrobeClick?: () => void;
 }
 
-const NewItem: React.FC<NewItemProps> = ({ onBackToDashboard, onLoginClick, onAboutUsClick, onLogoClick }) => {
+const NewItem: React.FC<NewItemProps> = ({ onBackToDashboard, onLoginClick, onAboutUsClick, onLogoClick, onOutfitClick, onWardrobeClick }) => {
   // Custom hooks for state management
   const { isMobile, isTablet } = useScreenSize();
   
@@ -67,7 +69,13 @@ const NewItem: React.FC<NewItemProps> = ({ onBackToDashboard, onLoginClick, onAb
 
   return (
     <>
-              <Header onLoginClick={onLoginClick} onAboutUsClick={onAboutUsClick} onLogoClick={onLogoClick} />
+              <Header 
+        onLoginClick={onLoginClick} 
+        onAboutUsClick={onAboutUsClick} 
+        onLogoClick={onLogoClick} 
+        onOutfitClick={onOutfitClick}
+        onWardrobeClick={onWardrobeClick}
+      />
       <main style={{
         marginTop: '120px',
         marginBottom: '120px',

@@ -11,6 +11,7 @@ import {
   Plus,
   Shuffle,
   Eye,
+  ArrowLeft,
 } from 'lucide-react';
 import Header from '../../layout/Header';
 import {
@@ -22,19 +23,25 @@ import {
 } from './hooks';
 import OutfitSaveModal from './OutfitSaveModal';
 import ItemDetailsModal from './itemDetailsModal';
-
+import Outfits from './Outfits';
 interface OutfitProps {
   onUploadClick: () => void;
   onLoginClick?: () => void;
   onAboutUsClick?: () => void;
   onLogoClick?: () => void;
+  onOutfitClick?: () => void;
+  onWardrobeClick?: () => void;
+  onBackToDashboard?: () => void;
 }
 
 const Outfit: React.FC<OutfitProps> = ({ 
   onUploadClick, 
   onLoginClick = () => {}, 
   onAboutUsClick = () => {}, 
-  onLogoClick = () => {} 
+  onLogoClick = () => {},
+  onOutfitClick = () => {},
+  onWardrobeClick = () => {},
+  onBackToDashboard = () => {}
 }) => {
   const { styles} = useOutfitStyles();
   const {
@@ -80,13 +87,15 @@ const Outfit: React.FC<OutfitProps> = ({
   // Track removed items from full outfit
   const [removedItemIds, setRemovedItemIds] = React.useState<Set<string>>(new Set());
   
+  // Track selected items from category matches
+  const [selectedMatchItems, setSelectedMatchItems] = React.useState<Set<string>>(new Set());
+  
   // Manual outfit creation state
   const [manualOutfitItems, setManualOutfitItems] = React.useState<any[]>([]);
   const [isDragging, setIsDragging] = React.useState(false);
   const [dragOverManual, setDragOverManual] = React.useState(false);
   
-  // All categories view state
-  const [showAllCategories, setShowAllCategories] = React.useState(false);
+  // Modal states for item details
   const [selectedItemForDetails, setSelectedItemForDetails] = React.useState<any>(null);
   const [showItemDetails, setShowItemDetails] = React.useState(false);
   const [showItemDetailsModal, setShowItemDetailsModal] = React.useState(false);
@@ -97,6 +106,7 @@ const Outfit: React.FC<OutfitProps> = ({
     
     if (category && selectedItem) {
       selectCategory(category);
+      setSelectedMatchItems(new Set()); // Clear previous selections
       const allItems = Object.values(groupedItems).flat();
       await matchByCategory(selectedItem, category, allItems);
     }
@@ -114,6 +124,7 @@ const Outfit: React.FC<OutfitProps> = ({
     selectItem(item);
     setSelectedDropdownCategory('');
     setRemovedItemIds(new Set());
+    setSelectedMatchItems(new Set());
   };
 
   const handleClearAll = () => {
@@ -125,7 +136,21 @@ const Outfit: React.FC<OutfitProps> = ({
     setSuccessMessage(null);
     setSelectedDropdownCategory('');
     setRemovedItemIds(new Set());
+    setSelectedMatchItems(new Set());
     setManualOutfitItems([]);
+  };
+
+  // Handle toggling individual item selection from category matches
+  const handleToggleMatchItemSelection = (itemId: string) => {
+    setSelectedMatchItems(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(itemId)) {
+        newSet.delete(itemId);
+      } else {
+        newSet.add(itemId);
+      }
+      return newSet;
+    });
   };
 
   // Manual outfit handlers
@@ -185,8 +210,20 @@ const Outfit: React.FC<OutfitProps> = ({
   // Filter out removed items from match results for display
   const filteredMatchResults = matchResults.filter(result => !removedItemIds.has(result.item.id));
 
+  // Get items for saving based on match type
+  const getItemsForSaving = () => {
+    if (matchType === 'category') {
+      // For category matches, only include selected items
+      return filteredMatchResults.filter(result => selectedMatchItems.has(result.item.id));
+    } else {
+      // For full outfit matches, include all filtered items
+      return filteredMatchResults;
+    }
+  };
+
   const handleOpenSaveModal = () => {
-    if (selectedItem && filteredMatchResults.length > 0) {
+    const itemsToSave = getItemsForSaving();
+    if (selectedItem && itemsToSave.length > 0) {
       setShowSaveModal(true);
     }
   };
@@ -202,9 +239,10 @@ const Outfit: React.FC<OutfitProps> = ({
   };
 
   const handleSaveAIOutfit = async (outfitData: any) => {
-    if (!selectedItem || filteredMatchResults.length === 0) return;
+    const itemsToSave = getItemsForSaving();
+    if (!selectedItem || itemsToSave.length === 0) return;
 
-    const selectedItems = filteredMatchResults.map(result => result.item);
+    const selectedItems = itemsToSave.map(result => result.item);
     const success = await saveOutfit(selectedItems, outfitData);
     
     if (success) {
@@ -235,15 +273,9 @@ const Outfit: React.FC<OutfitProps> = ({
     }
   };
 
-  // All categories handlers
+  // Wardrobe navigation handler
   const handleShowAllCategories = () => {
-    setShowAllCategories(true);
-  };
-
-  const handleBackToOutfits = () => {
-    setShowAllCategories(false);
-    setSelectedItemForDetails(null);
-    setShowItemDetails(false);
+    onWardrobeClick();
   };
 
   const handleItemCardClick = (item: any) => {
@@ -264,7 +296,6 @@ const Outfit: React.FC<OutfitProps> = ({
   const handleMixAndMatchFromCatalog = () => {
     // Bring the item back to outfit page and set it as selected
     selectItem(selectedItemForDetails);
-    setShowAllCategories(false);
     setShowItemDetails(false);
     setSelectedItemForDetails(null);
   };
@@ -323,6 +354,8 @@ const Outfit: React.FC<OutfitProps> = ({
         onLoginClick={onLoginClick}
         onAboutUsClick={onAboutUsClick}
         onLogoClick={onLogoClick}
+        onOutfitClick={onOutfitClick}
+        onWardrobeClick={onWardrobeClick}
       />
       <div style={styles.container}>
         {/* Header Section */}
@@ -337,6 +370,7 @@ const Outfit: React.FC<OutfitProps> = ({
             </p>
             <div style={styles.quickActions}>
               <button
+
                 onClick={onUploadClick}
                 style={{ ...styles.actionButton, ...styles.primaryAction }}
                 onMouseEnter={(e) => {
@@ -401,143 +435,20 @@ const Outfit: React.FC<OutfitProps> = ({
           </div>
         )}
 
+        
+{/* All Outfits Section - TEMPORARILY COMMENTED OUT */}
+        
+        <div style={{ marginBottom: '2rem' }}>
+          <Outfits
+            maxHeight="400px"
+            showHeader={true}
+            getImageUrl={getImageUrl}
+          />
+        </div>
+       
+
         {/* Main Content */}
-        {showAllCategories ? (
-          /* All Categories View */
-          <div style={{
-            backgroundColor: 'white',
-            borderRadius: '16px',
-            padding: '2rem',
-            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.07)',
-            border: '1px solid #e2e8f0',
-          }}>
-            {/* Header */}
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: '2rem',
-            }}>
-              <h2 style={{
-                margin: 0,
-                fontSize: '1.75rem',
-                fontWeight: '700',
-                color: '#1e293b',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.75rem',
-              }}>
-                <Grid3X3 size={28} />
-                Complete Wardrobe Catalog
-              </h2>
-              <button
-                onClick={handleBackToOutfits}
-                style={{
-                  padding: '0.5rem 1rem',
-                  backgroundColor: '#64748b',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '8px',
-                  fontSize: '0.875rem',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                }}
-              >
-                ← Back to Outfits
-              </button>
-            </div>
-
-            {/* All Items Grid */}
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
-              gap: '1.5rem',
-            }}>
-              {Object.entries(groupedItems).map(([category, items]) =>
-                items.map((item) => (
-                  <div
-                    key={item.id}
-                    style={{
-                      backgroundColor: 'white',
-                      borderRadius: '12px',
-                      border: '2px solid #e2e8f0',
-                      padding: '1rem',
-                      textAlign: 'center',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s ease',
-                    }}
-                    onClick={() => handleItemCardClick(item)}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.transform = 'translateY(-4px)';
-                      e.currentTarget.style.boxShadow = '0 8px 25px rgba(0, 0, 0, 0.1)';
-                      e.currentTarget.style.borderColor = '#667eea';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.transform = 'translateY(0)';
-                      e.currentTarget.style.boxShadow = 'none';
-                      e.currentTarget.style.borderColor = '#e2e8f0';
-                    }}
-                  >
-                    <div style={{
-                      width: '120px',
-                      height: '120px',
-                      margin: '0 auto 1rem',
-                      borderRadius: '12px',
-                      overflow: 'hidden',
-                      backgroundColor: '#f1f5f9',
-                      border: '1px solid #e2e8f0',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}>
-                      {renderItemImage(item, '120px')}
-                    </div>
-                    <h3 style={{
-                      fontSize: '1rem',
-                      fontWeight: '600',
-                      color: '#1e293b',
-                      margin: '0 0 0.5rem 0',
-                    }}>
-                      {item.details?.name || `${category} Item`}
-                    </h3>
-                    <p style={{
-                      fontSize: '0.875rem',
-                      color: '#64748b',
-                      margin: '0 0 1rem 0',
-                    }}>
-                      {category}
-                    </p>
-                    <div style={{
-                      fontSize: '0.75rem',
-                      color: '#94a3b8',
-                      fontStyle: 'italic',
-                    }}>
-                      Click for options
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-
-            {Object.keys(groupedItems).length === 0 && (
-              <div style={{
-                textAlign: 'center',
-                padding: '4rem 2rem',
-                color: '#64748b',
-              }}>
-                <Grid3X3 size={64} color="#cbd5e1" style={{ marginBottom: '1rem' }} />
-                <h3 style={{ fontSize: '1.25rem', marginBottom: '0.5rem' }}>
-                  No items in your wardrobe yet
-                </h3>
-                <p>Upload some clothing items to get started!</p>
-              </div>
-            )}
-          </div>
-        ) : (
-          <div style={styles.mainGrid}>
+        <div style={styles.mainGrid}>
           {/* Sidebar - Item Selection */}
           <div style={styles.sidebar}>
             <div style={styles.section}>
@@ -655,10 +566,31 @@ const Outfit: React.FC<OutfitProps> = ({
           {/* Main Mix & Match Area */}
           <div style={styles.mixMatchArea}>
             <div style={styles.sectionHeader}>
+              
               <h2 style={styles.sectionTitle}>
                 <Wand2 size={20} />
                 Mix & Match
+               
               </h2>
+              <button
+                  onClick={onBackToDashboard}
+                  style={{
+                    padding: '0.5rem 1rem',
+                    backgroundColor: '#64748b',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontSize: '0.875rem',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                  }}
+                >
+                  <ArrowLeft size={20} />
+                  Back to Dashboard
+                </button> 
               {selectedItem && (
                 <button
                   onClick={handleClearAll}
@@ -846,49 +778,100 @@ const Outfit: React.FC<OutfitProps> = ({
                       </h3>
                       <button
                         onClick={handleOpenSaveModal}
+                        disabled={getItemsForSaving().length === 0}
                         style={{
                           padding: '0.5rem 1rem',
-                          background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                          background: getItemsForSaving().length === 0 ? '#e5e7eb' : 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
                           border: 'none',
                           borderRadius: '8px',
-                          color: 'white',
+                          color: getItemsForSaving().length === 0 ? '#9ca3af' : 'white',
                           fontWeight: '600',
-                          cursor: 'pointer',
+                          cursor: getItemsForSaving().length === 0 ? 'not-allowed' : 'pointer',
                           fontSize: '0.875rem',
                           display: 'flex',
                           alignItems: 'center',
                           gap: '0.5rem',
                         }}
                         onMouseEnter={(e) => {
-                          e.currentTarget.style.transform = 'translateY(-2px)';
-                          e.currentTarget.style.boxShadow = '0 4px 15px rgba(16, 185, 129, 0.3)';
+                          if (getItemsForSaving().length > 0) {
+                            e.currentTarget.style.transform = 'translateY(-2px)';
+                            e.currentTarget.style.boxShadow = '0 4px 15px rgba(16, 185, 129, 0.3)';
+                          }
                         }}
                         onMouseLeave={(e) => {
-                          e.currentTarget.style.transform = 'translateY(0)';
-                          e.currentTarget.style.boxShadow = 'none';
+                          if (getItemsForSaving().length > 0) {
+                            e.currentTarget.style.transform = 'translateY(0)';
+                            e.currentTarget.style.boxShadow = 'none';
+                          }
                         }}
                       >
                         <Heart size={16} />
-                        Save Outfit
+                        Save Outfit {matchType === 'category' ? `(${getItemsForSaving().length})` : ''}
                       </button>
                     </div>
+                    {matchType === 'category' && (
+                      <div style={{
+                        marginBottom: '1rem',
+                        padding: '0.75rem',
+                        backgroundColor: '#f0f9ff',
+                        border: '1px solid #0ea5e9',
+                        borderRadius: '8px',
+                        fontSize: '0.875rem',
+                        color: '#0c4a6e',
+                      }}>
+                        💡 Click on items to select them for your outfit. Only selected items will be saved.
+                      </div>
+                    )}
+                    
+                    {/* Low score warning banner */}
+                    {filteredMatchResults.some(result => result.isLowScore) && (
+                      <div style={{
+                        marginBottom: '1rem',
+                        padding: '0.75rem',
+                        backgroundColor: '#fffbeb',
+                        border: '1px solid #f59e0b',
+                        borderRadius: '8px',
+                        fontSize: '0.875rem',
+                        color: '#92400e',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                      }}>
+                        <span style={{ fontSize: '1rem' }}>⚠️</span>
+                        <span>
+                          Some items have <strong>low compatibility scores</strong> because our AI model wasn't trained on those categories. 
+                          You can still select and use these items in your outfit!
+                        </span>
+                      </div>
+                    )}
                     <div style={styles.resultsGrid}>
-                      {filteredMatchResults.map((result) => (
-                        <div
-                          key={result.item.id}
-                          style={{
-                            ...styles.resultCard,
-                            position: 'relative',
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.transform = 'translateY(-4px)';
-                            e.currentTarget.style.boxShadow = '0 8px 25px rgba(0, 0, 0, 0.1)';
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.transform = 'translateY(0)';
-                            e.currentTarget.style.boxShadow = 'none';
-                          }}
-                        >
+                      {filteredMatchResults.map((result) => {
+                        const isSelected = selectedMatchItems.has(result.item.id);
+                        const isSelectable = matchType === 'category';
+                        const isLowScore = result.isLowScore;
+                        
+                        return (
+                          <div
+                            key={result.item.id}
+                            style={{
+                              ...styles.resultCard,
+                              position: 'relative',
+                              cursor: isSelectable ? 'pointer' : 'default',
+                              border: isSelected ? '2px solid #10b981' : 
+                                     isLowScore ? '2px solid #f59e0b' : '1px solid #e2e8f0',
+                              backgroundColor: isSelected ? '#f0fdf4' : 
+                                             isLowScore ? '#fffbeb' : 'white',
+                            }}
+                            onClick={() => isSelectable && handleToggleMatchItemSelection(result.item.id)}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.transform = 'translateY(-4px)';
+                              e.currentTarget.style.boxShadow = '0 8px 25px rgba(0, 0, 0, 0.1)';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.transform = 'translateY(0)';
+                              e.currentTarget.style.boxShadow = 'none';
+                            }}
+                          >
                           {/* Remove button for full outfit */}
                           {matchType === 'outfit' && (
                             <button
@@ -916,6 +899,47 @@ const Outfit: React.FC<OutfitProps> = ({
                             >
                               ×
                             </button>
+                          )}
+                          
+                          {/* Selection indicator for category matches */}
+                          {matchType === 'category' && (
+                            <div style={{
+                              position: 'absolute',
+                              top: '4px',
+                              right: '4px',
+                              width: '20px',
+                              height: '20px',
+                              borderRadius: '50%',
+                              border: '2px solid #10b981',
+                              backgroundColor: isSelected ? '#10b981' : 'white',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontSize: '12px',
+                              color: 'white',
+                              fontWeight: 'bold',
+                              zIndex: 10,
+                            }}>
+                              {isSelected ? '✓' : ''}
+                            </div>
+                          )}
+                          
+                          {/* Low score warning badge */}
+                          {isLowScore && (
+                            <div style={{
+                              position: 'absolute',
+                              top: '4px',
+                              left: '4px',
+                              backgroundColor: '#f59e0b',
+                              color: 'white',
+                              fontSize: '10px',
+                              fontWeight: 'bold',
+                              padding: '2px 6px',
+                              borderRadius: '8px',
+                              zIndex: 10,
+                            }}>
+                              ⚠️ LOW
+                            </div>
                           )}
                           
                           <div style={{
@@ -950,20 +974,21 @@ const Outfit: React.FC<OutfitProps> = ({
                           <div style={{
                             fontSize: '0.75rem',
                             fontWeight: '600',
-                            color: '#10b981',
+                            color: isLowScore ? '#f59e0b' : '#10b981',
                             marginBottom: '0.25rem',
                           }}>
                             {result.confidence}% Match
                           </div>
                           <div style={{
                             fontSize: '0.7rem',
-                            color: '#94a3b8',
+                            color: isLowScore ? '#d97706' : '#94a3b8',
                             fontStyle: 'italic',
                           }}>
                             {result.reason}
                           </div>
                         </div>
-                      ))}
+                      );
+                    })}
                     </div>
                   </div>
                 )}
@@ -971,10 +996,8 @@ const Outfit: React.FC<OutfitProps> = ({
             )}
           </div>
         </div>
-        )}
 
         {/* Manual Outfit Creation Section */}
-        {!showAllCategories && (
         <div style={{
           margin: '2rem 0',
           padding: '2rem',
@@ -1178,7 +1201,6 @@ const Outfit: React.FC<OutfitProps> = ({
             </div>
           )}
          </div>
-        )}
       </div>
       
       {/* AI Outfit Save Modal */}
@@ -1187,7 +1209,7 @@ const Outfit: React.FC<OutfitProps> = ({
           isOpen={showSaveModal}
           onClose={handleCloseSaveModal}
           onSave={handleSaveAIOutfit}
-          selectedItems={filteredMatchResults.map(result => result.item)}
+          selectedItems={getItemsForSaving().map(result => result.item)}
           selectedItem={selectedItem}
           isSaving={isSaving}
           getImageUrl={getSafeImageUrl}

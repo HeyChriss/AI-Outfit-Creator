@@ -6,6 +6,7 @@ interface ClothingItem {
   id: string;
   category: string;
   image: string;
+  image_url?: string;
   details: any;
   timestamp: string;
 }
@@ -23,6 +24,7 @@ interface ItemDetails {
   image: string;
   details: any;
   timestamp: string;
+  image_url?: string;
   brand?: string;
   color?: string;
   occasion?: string;
@@ -229,21 +231,22 @@ const ItemDetailsModal: React.FC<ItemDetailsModalProps> = ({
                 boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05)',
               }}>
                 <img
-                  src={getImageUrl(itemDetails.image)}
-                  alt={itemDetails.details?.name || itemDetails.category}
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'cover',
-                  }}
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    target.style.display = 'none';
-                    const parent = target.parentElement;
-                    if (parent) {
-                      parent.innerHTML = '<span style="font-size: 4rem; color: #cbd5e1;">👕</span>';
-                    }
-                  }}
+                    // Replace the src attribute with this new logic
+                    src={itemDetails.image_url || getImageUrl(itemDetails.image)}
+                    alt={itemDetails.details?.name || itemDetails.category}
+                    style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                    }}
+                    onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = 'none';
+                        const parent = target.parentElement;
+                        if (parent) {
+                        parent.innerHTML = '<span style="font-size: 4rem; color: #cbd5e1;">👕</span>';
+                        }
+                    }}
                 />
               </div>
             </div>

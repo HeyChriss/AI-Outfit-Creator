@@ -14,6 +14,7 @@ interface MatchResult {
   confidence: number;
   reason: string;
   compatibility_score: number;
+  isLowScore: boolean;
 }
 
 interface FashionPredictResponse {
@@ -86,11 +87,17 @@ const useMixMatch = () => {
         const score = await getFashionCompatibility(selectedItem, item);
         // Convert score from 0-1 to 0-100 for display
         const scorePercentage = score * 100;
+        
+        // Detect if this is a low-scoring item (model not trained well on this category)
+        const isLowScore = scorePercentage < 15;
+        
         return {
           item,
           confidence: Math.round(scorePercentage),
           compatibility_score: scorePercentage,
-          reason: scorePercentage > 80 ? 'Excellent match!' : 
+          isLowScore,
+          reason: isLowScore ? 'Model not trained on this category, but you can still select it' :
+                  scorePercentage > 80 ? 'Excellent match!' : 
                   scorePercentage > 60 ? 'Good compatibility' : 
                   scorePercentage > 40 ? 'Decent pairing' : 'Basic match'
         };
@@ -101,10 +108,8 @@ const useMixMatch = () => {
       // Sort by compatibility score
       results.sort((a, b) => b.compatibility_score - a.compatibility_score);
 
-      // Filter out very low scores and limit results
-      const filteredResults = results
-        .filter(result => result.compatibility_score > 30)
-        .slice(0, 6);
+      // Don't filter out low scores anymore - show all items but limit to 6
+      const filteredResults = results.slice(0, 6);
 
       setMatchResults(filteredResults);
       setIsMatching(false);
@@ -157,23 +162,29 @@ const useMixMatch = () => {
 
         // Convert score from 0-1 to 0-100 for display
         const scorePercentage = bestMatch.score * 100;
+        
+        // Detect if this is a low-scoring item (model not trained well on this category)
+        const isLowScore = scorePercentage < 15;
+        
         return {
           item: bestMatch.item,
           confidence: Math.round(scorePercentage),
           compatibility_score: scorePercentage,
-          reason: scorePercentage > 80 ? 'Perfect for your outfit!' : 
+          isLowScore,
+          reason: isLowScore ? 'Model not trained on this category, but you can still select it' :
+                  scorePercentage > 80 ? 'Perfect for your outfit!' : 
                   scorePercentage > 60 ? 'Great addition to your look' : 
                   scorePercentage > 40 ? 'Nice complement' : 'Suitable match'
         };
       });
 
-      const results = (await Promise.all(outfitPromises))
-        .filter((result): result is MatchResult => result !== null)
-        .filter(result => result.compatibility_score > 30);
+      const rawResults = await Promise.all(outfitPromises);
+      const results = rawResults.filter((result): result is MatchResult => result !== null);
 
       // Sort by compatibility score
       results.sort((a, b) => b.compatibility_score - a.compatibility_score);
 
+      // Don't filter out low scores anymore - show all items but limit to 8
       setMatchResults(results.slice(0, 8));
       setIsMatching(false);
       return results;

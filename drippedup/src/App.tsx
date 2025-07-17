@@ -6,16 +6,17 @@ import Header from './components/layout/Header'
 import NewItem from './components/pages/newItem/NewItem'
 import AboutUs from './components/pages/AboutUs'  
 import Outfit from './components/pages/outfits/Outfit'
+import Wardrobe from './components/pages/Wardrobe'
 import LoginPage from './components/auth/LoginPage'
 import SignUpPage from './components/auth/SignUpPage'
 import LandingPage from './components/layout/LandingPage'
 import Dashboard from './components/pages/Dashboard'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
-import ProtectedRoute from './components/protectedRoute'
+import ProtectedRoute from './components/ProtectedRoute'
 import LoadingSpinner from './components/loadingSpinner'
 
 type AuthView = 'login' | 'signup' | null;
-type CurrentView = 'landing' | 'dashboard' | 'newItem' | 'aboutUs' | 'outfits';
+type CurrentView = 'landing' | 'dashboard' | 'newItem' | 'aboutUs' | 'outfits' | 'wardrobe';
 
 // Main App Component (wrapped by AuthProvider)
 function AppContent() {
@@ -27,7 +28,7 @@ function AppContent() {
   React.useEffect(() => {
     if (user && currentView === 'landing') {
       setCurrentView('dashboard')
-    } else if (!user && (currentView === 'dashboard' || currentView === 'newItem' || currentView === 'outfits')) {
+    } else if (!user && (currentView === 'dashboard' || currentView === 'newItem' || currentView === 'outfits' || currentView === 'wardrobe')) {
       setCurrentView('landing')
     }
   }, [user, currentView])
@@ -75,60 +76,75 @@ function AppContent() {
     )
   }
 
-  // Protected routes - only accessible when authenticated
-  if (user) {
-    if (currentView === 'newItem') {
-      return (
-        <ProtectedRoute>
-          <NewItem 
-            onBackToDashboard={() => setCurrentView('dashboard')}
-            onLoginClick={() => setAuthView('login')}
-            onAboutUsClick={() => setCurrentView('aboutUs')}
-            onLogoClick={() => setCurrentView('landing')}
-          />
-        </ProtectedRoute>
-      );
-    }
+  // Handle different views based on currentView state
+  if (currentView === 'newItem') {
+    return (
+      <NewItem 
+        onBackToDashboard={() => setCurrentView('dashboard')}
+        onLoginClick={() => setAuthView('login')}
+        onAboutUsClick={() => setCurrentView('aboutUs')}
+        onLogoClick={() => setCurrentView('landing')}
+        onOutfitClick={() => setCurrentView('outfits')}
+        onWardrobeClick={() => setCurrentView('wardrobe')}
+      />
+    );
+  }
 
-    if (currentView === 'outfits') {
-      return (
-        <ProtectedRoute>
-          <Outfit 
-            onUploadClick={() => setCurrentView('newItem')}
-            onLoginClick={() => setAuthView('login')}
-            onAboutUsClick={() => setCurrentView('aboutUs')}
-            onLogoClick={() => setCurrentView('landing')}
-          />
-        </ProtectedRoute>
-      );
-    }
+  if (currentView === 'outfits') {
+    return (
+      <Outfit 
+        onUploadClick={() => setCurrentView('newItem')}
+        onLoginClick={() => setAuthView('login')}
+        onAboutUsClick={() => setCurrentView('aboutUs')}
+        onLogoClick={() => setCurrentView('landing')}
+        onOutfitClick={() => setCurrentView('outfits')}
+        onWardrobeClick={() => setCurrentView('wardrobe')}
+        onBackToDashboard={() => setCurrentView('dashboard')}
+      />
+    );
+  }
 
-    if (currentView === 'dashboard') {
-      return (
-        <ProtectedRoute>
-          <Header 
-            onLoginClick={() => setAuthView('login')}
-            onAboutUsClick={() => setCurrentView('aboutUs')}
-            onLogoClick={() => setCurrentView('landing')}
+  if (currentView === 'wardrobe') {
+    return (
+      <Wardrobe 
+        onUploadClick={() => setCurrentView('newItem')}
+        onOutfitClick={() => setCurrentView('outfits')}
+        onLoginClick={() => setAuthView('login')}
+        onAboutUsClick={() => setCurrentView('aboutUs')}
+        onLogoClick={() => setCurrentView('landing')}
+        onWardrobeClick={() => setCurrentView('wardrobe')}
+        onBackToDashboard={() => setCurrentView('dashboard')}
+      />
+    );
+  }
+
+  if (currentView === 'dashboard') {
+    return (
+      <ProtectedRoute>
+        <Header 
+          onLoginClick={() => setAuthView('login')}
+          onAboutUsClick={() => setCurrentView('aboutUs')}
+          onLogoClick={() => setCurrentView('landing')}
+          onOutfitClick={() => setCurrentView('outfits')}
+          onWardrobeClick={() => setCurrentView('wardrobe')}
+        />
+        <main
+          style={{
+            marginTop: '120px',
+            marginBottom: '120px',
+            minHeight: 'calc(100vh - 200px)',
+            overflowY: 'auto'
+          }}
+        >
+          <Dashboard 
+            onUploadClick={() => setCurrentView('newItem')} 
             onOutfitClick={() => setCurrentView('outfits')}
+            onWardrobeClick={() => setCurrentView('wardrobe')}
           />
-          <main
-            style={{
-              marginTop: '120px',
-              marginBottom: '120px',
-              minHeight: 'calc(100vh - 200px)',
-              overflowY: 'auto'
-            }}
-          >
-            <Dashboard 
-              onUploadClick={() => setCurrentView('newItem')} 
-              onOutfitClick={() => setCurrentView('outfits')}
-            />
-          </main>
-          <Footer onAboutUsClick={() => setCurrentView('aboutUs')} />
-        </ProtectedRoute>
-      );
-    }
+        </main>
+        <Footer onAboutUsClick={() => setCurrentView('aboutUs')} />
+      </ProtectedRoute>
+    );
   }
 
   // Public routes - accessible without authentication
@@ -139,18 +155,51 @@ function AppContent() {
         onLoginClick={() => setAuthView('login')}
         onAboutUsClick={() => setCurrentView('aboutUs')}
         onLogoClick={() => setCurrentView('landing')}
+        onOutfitClick={() => setCurrentView('outfits')}
+        onWardrobeClick={() => setCurrentView('wardrobe')}
       />
     );
   }
 
-  // Default landing page for non-authenticated users or when explicitly set
+  // Show landing page for non-authenticated users or when explicitly set
+  if (!user || currentView === 'landing') {
+    return (
+      <>
+        <Header 
+          onLoginClick={() => setAuthView('login')}
+          onAboutUsClick={() => setCurrentView('aboutUs')}
+          onLogoClick={() => setCurrentView('landing')}
+          onOutfitClick={() => setAuthView('login')} 
+          onWardrobeClick={() => setAuthView('login')}
+        />
+        <main
+          style={{
+            marginTop: '120px',
+            marginBottom: '120px',
+            minHeight: 'calc(100vh - 200px)',
+            overflowY: 'auto'
+          }}
+        >
+          <LandingPage 
+            onLoginClick={() => setAuthView('login')}
+            onSignUpClick={() => setAuthView('signup')}
+            onAboutUsClick={() => setCurrentView('aboutUs')}
+          />
+        </main>
+        <Footer onAboutUsClick={() => setCurrentView('aboutUs')} />
+      </>
+    );
+  }
+
+  // Show dashboard for authenticated users (fallback)
   return (
     <>
       <Header 
         onLoginClick={() => setAuthView('login')}
         onAboutUsClick={() => setCurrentView('aboutUs')}
         onLogoClick={() => setCurrentView('landing')}
-        onOutfitClick={() => setAuthView('login')} // Require login for outfits
+        onOutfitClick={() => setCurrentView('outfits')}
+        onWardrobeClick={() => setCurrentView('wardrobe')}
       />
       <main
         style={{
@@ -160,10 +209,10 @@ function AppContent() {
           overflowY: 'auto'
         }}
       >
-        <LandingPage 
-          onLoginClick={() => setAuthView('login')}
-          onSignUpClick={() => setAuthView('signup')}
-          onAboutUsClick={() => setCurrentView('aboutUs')}
+        <Dashboard 
+          onUploadClick={() => setCurrentView('newItem')} 
+          onOutfitClick={() => setCurrentView('outfits')}
+          onWardrobeClick={() => setCurrentView('wardrobe')}
         />
       </main>
       <Footer onAboutUsClick={() => setCurrentView('aboutUs')} />
