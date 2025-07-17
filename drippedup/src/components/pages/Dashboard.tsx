@@ -27,6 +27,7 @@ interface RecentUpload {
     image: string;
     details: any;
     timestamp: string;
+    image_url?: string; // For Supabase items
   };
 }
 
@@ -36,9 +37,10 @@ const Dashboard: React.FC<DashboardProps> = ({ onUploadClick, onOutfitClick }) =
     width: typeof window !== 'undefined' ? window.innerWidth : 1200,
     height: typeof window !== 'undefined' ? window.innerHeight : 800
   });
-  const [recentUploads, setRecentUploads] = useState<RecentUpload[]>([]); // stores an array of recent uploads
-  const [loading, setLoading] = useState(true); // loading state when fetching recent uploads
-  const [outfitsCount, setOutfitsCount] = useState(0); // stores the actual number of outfits created
+  const [recentUploads, setRecentUploads] = useState<RecentUpload[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [outfitsCount, setOutfitsCount] = useState(0);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const handleResize = () => {
@@ -52,43 +54,75 @@ const Dashboard: React.FC<DashboardProps> = ({ onUploadClick, onOutfitClick }) =
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  const fetchRecentUploads = async () => {
+    if (!user?.id) {
+      console.log('No user ID available for fetching recent uploads');
+      setRecentUploads([]);
+      return;
+    }
+
+    try {
+      const response = await fetch(`${config.API_BASE_URL}/recent-uploads?user_id=${user.id}`);
+      if (response.ok) {
+        const data = await response.json();
+        setRecentUploads(data.recent_uploads || []);
+      } else {
+        throw new Error(`Failed to fetch recent uploads: ${response.status}`);
+      }
+    } catch (error) {
+      console.error('Error fetching recent uploads:', error);
+      setError('Failed to load recent uploads');
+    }
+  };
+
+  const fetchOutfitsCount = async () => {
+    if (!user?.id) {
+      console.log('No user ID available for fetching outfits count');
+      setOutfitsCount(0);
+      return;
+    }
+
+    try {
+      const response = await fetch(`${config.API_BASE_URL}/outfits/basic?user_id=${user.id}`);
+      if (response.ok) {
+        const data = await response.json();
+        setOutfitsCount(data.count || 0);
+      } else {
+        throw new Error(`Failed to fetch outfits count: ${response.status}`);
+      }
+    } catch (error) {
+      console.error('Error fetching outfits count:', error);
+      setError('Failed to load outfits count');
+    }
+  };
+
+  // Initial data fetch
   useEffect(() => {
-    const fetchRecentUploads = async () => { // fetches recent uploads from the backend
-      try {
-        const response = await fetch(`${config.API_BASE_URL}/recent-uploads`); // fetches recent uploads from the backend
-        if (response.ok) {
-          const data = await response.json(); // parses the response as JSON
-          setRecentUploads(data.recent_uploads || []); // sets the recent uploads to the data
-        } else {
-          console.error('Failed to fetch recent uploads');
+    const fetchData = async () => {
+      if (user?.id) {
+        setLoading(true);
+        setError(null);
+        
+        try {
+          await Promise.all([
+            fetchRecentUploads(),
+            fetchOutfitsCount()
+          ]);
+        } catch (err) {
+          console.error('Error fetching dashboard data:', err);
+          setError('Failed to load dashboard data');
+        } finally {
+          setLoading(false);
         }
-      } catch (error) {
-        console.error('Error fetching recent uploads:', error);
-      } finally {
-        setLoading(false); // sets loading to false because the recent uploads have been fetched
+      } else {
+        setLoading(false);
+        setRecentUploads([]);
+        setOutfitsCount(0);
       }
     };
 
-    fetchRecentUploads();
-  }, []);
-
-  useEffect(() => {
-    const fetchOutfitsCount = async () => { // fetches the actual number of outfits from the backend
-      try {
-        const response = await fetch(`${config.API_BASE_URL}/outfits/basic`); // fetches outfits from the backend
-        if (response.ok) {
-          const data = await response.json(); // parses the response as JSON
-          setOutfitsCount(data.count || 0); // sets the outfits count from the API response
-        } else {
-          console.error('Failed to fetch outfits count');
-        }
-      } catch (error) {
-        console.error('Error fetching outfits count:', error);
-      }
-    };
-
-    fetchOutfitsCount();
-  }, []);
+    fetchData();
+  }, [user?.id]);
 
   const isMobile = screenSize.width < 768;
   const isTablet = screenSize.width >= 768 && screenSize.width < 1024;
@@ -108,33 +142,34 @@ const Dashboard: React.FC<DashboardProps> = ({ onUploadClick, onOutfitClick }) =
   };
 
   // Helper function to get image URL
-  const getImageUrl = (imagePath: string) => {
-    return `${config.API_BASE_URL}/images/${imagePath}`;
+  const getImageUrl = (upload: RecentUpload) => {
+    // Check if it's a Supabase item with image_url
+    if (upload.item_info.image_url) {
+      return upload.item_info.image_url;
+    }
+    // Check if image_path is a full URL
+    if (upload.image_path && upload.image_path.startsWith('http')) {
+      return upload.image_path;
+    }
+    // Fallback to local API
+    return `${config.API_BASE_URL}/images/${upload.item_info.image}`;
   };
 
-  // Function to refresh recent uploads and outfits count if the user clicks the refresh button
+  // Function to refresh recent uploads and outfits count
   const refreshRecentUploads = async () => {
-    setLoading(true);
-    try {
-      // Fetch recent uploads
-      const uploadsResponse = await fetch(`${config.API_BASE_URL}/recent-uploads`);
-      if (uploadsResponse.ok) {
-        const uploadsData = await uploadsResponse.json();
-        setRecentUploads(uploadsData.recent_uploads || []);
-      } else {
-        console.error('Failed to fetch recent uploads');
-      }
+    if (!user?.id) return;
 
-      // Fetch outfits count
-      const outfitsResponse = await fetch(`${config.API_BASE_URL}/outfits/basic`);
-      if (outfitsResponse.ok) {
-        const outfitsData = await outfitsResponse.json();
-        setOutfitsCount(outfitsData.count || 0);
-      } else {
-        console.error('Failed to fetch outfits count');
-      }
+    setLoading(true);
+    setError(null);
+    
+    try {
+      await Promise.all([
+        fetchRecentUploads(),
+        fetchOutfitsCount()
+      ]);
     } catch (error) {
-      console.error('Error fetching data:', error);
+      console.error('Error refreshing data:', error);
+      setError('Failed to refresh data');
     } finally {
       setLoading(false);
     }
@@ -398,7 +433,40 @@ const Dashboard: React.FC<DashboardProps> = ({ onUploadClick, onOutfitClick }) =
       marginBottom: '1rem',
       opacity: 0.5,
     },
+    errorMessage: {
+      background: '#fee2e2',
+      border: '1px solid #fecaca',
+      borderRadius: '8px',
+      padding: '1rem',
+      color: '#dc2626',
+      marginBottom: '1rem',
+      fontSize: '0.875rem',
+    },
   };
+
+  // Show loading state while user is being determined
+  if (loading && !user) {
+    return (
+      <div style={styles.container}>
+        <div style={styles.emptyState}>
+          <div style={styles.emptyIcon}>⏳</div>
+          <p>Loading your dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show message if no user
+  if (!user) {
+    return (
+      <div style={styles.container}>
+        <div style={styles.emptyState}>
+          <div style={styles.emptyIcon}>👤</div>
+          <p>Please log in to view your dashboard.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={styles.container}>
@@ -446,6 +514,13 @@ const Dashboard: React.FC<DashboardProps> = ({ onUploadClick, onOutfitClick }) =
           </div>
         </div>
       </div>
+
+      {/* Error Message */}
+      {error && (
+        <div style={styles.errorMessage}>
+          {error}
+        </div>
+      )}
 
       {/* Main Content Grid */}
       <div style={styles.gridContainer}>
@@ -514,7 +589,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onUploadClick, onOutfitClick }) =
                     border: '1px solid #e2e8f0',
                   }}>
                     <img 
-                      src={getImageUrl(upload.item_info.image)}
+                      src={getImageUrl(upload)}
                       alt={upload.item_info.details?.name || upload.item_info.category}
                       style={{
                         width: '100%',

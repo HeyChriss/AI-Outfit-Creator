@@ -78,7 +78,7 @@ class FashionCompatibility:
         """
         load_dotenv()
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.model_weights_path = model_path or os.getenv('FASHION_MODEL_WEIGHTS_PATH')
+        self.model_weights_path = "C:/Users/bansb/OneDrive/Desktop/DS460/AI-Outfit-Creator/drippedup/backend/siamese_model_real.pth"
         if not self.model_weights_path:
             logger.error("No model weights path specified in environment variables or constructor.")
             raise ValueError("Model weights path must be specified.")

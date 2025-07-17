@@ -28,7 +28,7 @@ class ClothingClassifier:
         load_dotenv()
         
         self.image_size = image_size
-        self.model_weights_path = os.getenv('MODEL_WEIGHTS_PATH')
+        self.model_weights_path = "C:/Users/bansb/OneDrive/Desktop/DS460/AI-Outfit-Creator/drippedup/backend/small.keras"
         self.model = None
         self.class_labels = [
             'Blazer', 'Blouse', 'Body', 'Dress', 'Hat', 'Hoodie', 'Longsleeve', 

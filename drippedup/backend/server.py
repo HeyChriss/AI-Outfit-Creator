@@ -1,23 +1,25 @@
+# backend/server.py - Complete Supabase-only version
 from fastapi import FastAPI, File, UploadFile, HTTPException, Form
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, FileResponse
+from fastapi.responses import JSONResponse
 import uvicorn
 import os
 import io
+import tempfile
 from typing import Dict, List
 import logging
 from classification import ClothingClassifier
 from PIL import Image
 import numpy as np
-from storage import (
-    save_item, get_recent_uploads, get_all_categories, get_items_by_category, 
-    get_all_items_grouped_by_category, get_metadata, get_picture, look_items, 
-    get_item_info, delete_by_id, save_outfit, get_outfit_with_items, 
-    get_recent_outfits, get_all_outfits_with_items, get_outfit_info, 
-    get_all_outfits, get_all_outfit_tags, get_outfits_by_tag, delete_outfit
-)
 import json
 from fashion import FashionCompatibility
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
+
+# Import Supabase service
+from supabase_service import supabase_service
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -51,17 +53,24 @@ async def startup_event():
     except Exception as e:
         logger.error(f"Failed to initialize classifier: {e}")
         raise
+    
+    # Make fashion model optional
     try:
         fashion = FashionCompatibility()
         logger.info("FashionCompatibility initialized successfully")
     except Exception as e:
-        logger.error(f"Failed to initialize FashionCompatibility: {e}")
+        logger.warning(f"FashionCompatibility not available: {e}")
+        logger.info("Server will run without fashion compatibility features")
         fashion = None
 
 @app.get("/")
 async def root():
     """Root endpoint to check if the server is running."""
-    return {"message": "Clothing Classification API is running!"}
+    return {
+        "message": "DrippedUp API is running with Supabase!",
+        "supabase_enabled": True,
+        "fashion_model_available": fashion is not None
+    }
 
 @app.get("/health")
 async def health_check():
@@ -73,6 +82,8 @@ async def health_check():
     return {
         "status": "healthy",
         "classifier_ready": classifier is not None,
+        "fashion_model_ready": fashion is not None,
+        "supabase_enabled": True,
         "model_info": classifier.get_model_info() if classifier else None
     }
 
@@ -167,7 +178,6 @@ async def predict_clothing(file: UploadFile = File(...)):
         logger.error(f"Error processing prediction: {e}")
         raise HTTPException(status_code=500, detail=f"Prediction failed: {str(e)}")
 
-
 @app.get("/model-info")
 async def get_model_info():
     """Get information about the loaded model."""
@@ -182,85 +192,99 @@ async def get_model_info():
 async def save_item_endpoint(
     file: UploadFile = File(...),
     clothing_type: str = Form(...),
-    details: str = Form(None)
+    details: str = Form(None),
+    user_id: str = Form(...)
 ):
     """
-    Save uploaded image and details to a subfolder in the images directory based on clothing type.
-    """
-    details_dict = json.loads(details) if details else {}
-    # Use the abstracted save_item function
-    return save_item(file, clothing_type, details_dict)
-
-@app.get("/recent-uploads")
-async def get_recent_uploads_endpoint():
-    """
-    Get the most recent uploads from the storage.
+    Save uploaded image and details to Supabase.
     """
     try:
-        recent_uploads = get_recent_uploads()
+        details_dict = json.loads(details) if details else {}
+        
+        # Upload image to Supabase
+        image_data = await supabase_service.upload_image(file, clothing_type, user_id)
+        
+        # Save clothing item to database
+        item = await supabase_service.save_clothing_item(image_data, details_dict, user_id)
+        
+        return {
+            "message": "Item saved successfully to Supabase",
+            "item": item
+        }
+        
+    except Exception as e:
+        logger.error(f"Error saving item: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to save item: {str(e)}")
+
+@app.get("/recent-uploads")
+async def get_recent_uploads_endpoint(user_id: str = None):
+    """
+    Get the most recent uploads from Supabase.
+    """
+    if not user_id:
+        raise HTTPException(status_code=400, detail="user_id is required")
+    
+    try:
+        items = await supabase_service.get_user_items(user_id, limit=10)
+        # Convert to the format your frontend expects
+        recent_uploads = []
+        for item in items:
+            recent_uploads.append({
+                "image_path": item.get("image_url", ""),
+                "item_info": item
+            })
         return {"recent_uploads": recent_uploads}
     except Exception as e:
         logger.error(f"Error getting recent uploads: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to get recent uploads: {str(e)}")
 
-@app.get("/images/{category}/{filename}")
-async def serve_image(category: str, filename: str):
-    """
-    Serve image files from the images directory.
-    """
-    try:
-        # Construct the full path to the image
-        images_dir = os.path.join(os.path.dirname(__file__), "images")
-        image_path = os.path.join(images_dir, category, filename)
-        
-        # Check if file exists
-        if not os.path.exists(image_path):
-            raise HTTPException(status_code=404, detail="Image not found")
-        
-        # Check if it's actually a file and not a directory
-        if not os.path.isfile(image_path):
-            raise HTTPException(status_code=404, detail="Image not found")
-        
-        # Return the file
-        return FileResponse(image_path)
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error serving image {category}/{filename}: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to serve image: {str(e)}")
-
 @app.get("/categories")
-async def get_categories():
+async def get_categories(user_id: str = None):
     """
-    Get all available clothing categories.
+    Get all available clothing categories for a user.
     """
+    if not user_id:
+        raise HTTPException(status_code=400, detail="user_id is required")
+    
     try:
-        categories = get_all_categories()
+        categories = await supabase_service.get_user_categories(user_id)
         return {"categories": categories}
     except Exception as e:
         logger.error(f"Error getting categories: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to get categories: {str(e)}")
 
 @app.get("/items/category/{category}")
-async def get_items_by_category_endpoint(category: str):
+async def get_items_by_category_endpoint(category: str, user_id: str = None):
     """
     Get all items for a specific category.
     """
+    if not user_id:
+        raise HTTPException(status_code=400, detail="user_id is required")
+    
     try:
-        items = get_items_by_category(category)
+        items = await supabase_service.get_user_items(user_id, category=category)
         return {"category": category, "items": items}
     except Exception as e:
         logger.error(f"Error getting items for category {category}: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to get items for category: {str(e)}")
 
 @app.get("/items/grouped")
-async def get_items_grouped_by_category_endpoint():
+async def get_items_grouped_by_category_endpoint(user_id: str = None):
     """
     Get all items grouped by category.
     """
+    if not user_id:
+        raise HTTPException(status_code=400, detail="user_id is required")
+    
     try:
-        grouped_items = get_all_items_grouped_by_category()
+        # Get all items and group them
+        items = await supabase_service.get_user_items(user_id)
+        grouped_items = {}
+        for item in items:
+            category = item.get("category", "Other")
+            if category not in grouped_items:
+                grouped_items[category] = []
+            grouped_items[category].append(item)
         return {"items_by_category": grouped_items}
     except Exception as e:
         logger.error(f"Error getting grouped items: {e}")
@@ -272,7 +296,7 @@ async def get_item_by_id(item_id: str):
     Get item information by ID.
     """
     try:
-        item_info = get_item_info(item_id)
+        item_info = await supabase_service.get_item_by_id(item_id)
         if item_info is None:
             raise HTTPException(status_code=404, detail="Item not found")
         return {"item": item_info}
@@ -286,48 +310,49 @@ async def get_item_by_id(item_id: str):
 async def fashion_predict(item_id1: str = Form(...), item_id2: str = Form(...)):
     """
     Predict fashion compatibility between two items by their IDs.
-    Args:
-        item_id1: The ID of the first item
-        item_id2: The ID of the second item
-    Returns:
-        JSON response with compatibility score and embeddings
     """
     global fashion
     if fashion is None:
-        raise HTTPException(status_code=503, detail="FashionCompatibility not initialized")
+        raise HTTPException(status_code=503, detail="FashionCompatibility not available")
     
     try:
-        # Get image paths for both items
-        image_path1 = get_picture(item_id1)
-        image_path2 = get_picture(item_id2)
+        # Get items from Supabase
+        item1 = await supabase_service.get_item_by_id(item_id1)
+        item2 = await supabase_service.get_item_by_id(item_id2)
         
-        if not image_path1:
-            raise HTTPException(status_code=404, detail=f"Item {item_id1} not found")
-        if not image_path2:
-            raise HTTPException(status_code=404, detail=f"Item {item_id2} not found")
+        if not item1 or not item2:
+            raise HTTPException(status_code=404, detail="One or both items not found")
         
-        # Check if image files exist
-        if not os.path.exists(image_path1):
-            raise HTTPException(status_code=404, detail=f"Image file for item {item_id1} not found")
-        if not os.path.exists(image_path2):
-            raise HTTPException(status_code=404, detail=f"Image file for item {item_id2} not found")
+        # Download images for ML processing
+        image1_data = await supabase_service.download_image_for_ml(item1["image_path"])
+        image2_data = await supabase_service.download_image_for_ml(item2["image_path"])
         
-        # Predict compatibility using paths
-        logger.info(f"Predicting compatibility between {image_path1} and {image_path2}")
-        result = fashion.predict_from_paths(image_path1, image_path2)
-        logger.info(f"Compatibility score: {result.get('compatibility_score', 'N/A')}")
+        # Save to temporary files for ML model
+        with tempfile.NamedTemporaryFile(suffix='.jpg', delete=False) as f1:
+            f1.write(image1_data)
+            temp_path1 = f1.name
         
-        # Get item info for response
-        item_info1 = get_item_info(item_id1)
-        item_info2 = get_item_info(item_id2)
+        with tempfile.NamedTemporaryFile(suffix='.jpg', delete=False) as f2:
+            f2.write(image2_data)
+            temp_path2 = f2.name
         
-        result["items"] = [
-            {"id": item_id1, "info": item_info1},
-            {"id": item_id2, "info": item_info2}
-        ]
-        
-        logger.info(f"Fashion compatibility prediction completed for items {item_id1} and {item_id2}")
-        return result
+        try:
+            # Predict compatibility
+            result = fashion.predict_from_paths(temp_path1, temp_path2)
+            
+            # Add item info to response
+            result["items"] = [
+                {"id": item_id1, "info": item1},
+                {"id": item_id2, "info": item2}
+            ]
+            
+            return result
+            
+        finally:
+            # Clean up temp files
+            os.unlink(temp_path1)
+            os.unlink(temp_path2)
+            
     except HTTPException:
         raise
     except Exception as e:
@@ -339,7 +364,7 @@ async def get_fashion_model_info():
     """Get information about the loaded fashion model."""
     global fashion
     if fashion is None:
-        raise HTTPException(status_code=503, detail="FashionCompatibility not initialized")
+        raise HTTPException(status_code=503, detail="FashionCompatibility not available")
     return fashion.get_model_info()
 
 # ========== OUTFIT ENDPOINTS ==========
@@ -349,7 +374,8 @@ async def create_outfit(
     name: str = Form(...),
     item_ids: str = Form(...),  # JSON string of item IDs
     description: str = Form(""),
-    tags: str = Form("[]")  # JSON string of tags
+    tags: str = Form("[]"),  # JSON string of tags
+    user_id: str = Form(...)
 ):
     """
     Create a new outfit with the given name and item IDs.
@@ -359,13 +385,13 @@ async def create_outfit(
         item_ids_list = json.loads(item_ids)
         tags_list = json.loads(tags)
         
-        # Validate that all items exist
-        for item_id in item_ids_list:
-            if get_item_info(item_id) is None:
-                raise HTTPException(status_code=400, detail=f"Item {item_id} not found")
+        # Create outfit using Supabase
+        result = await supabase_service.save_outfit(name, item_ids_list, user_id, description, tags_list)
+        return {
+            "message": "Outfit saved successfully",
+            "outfit": result
+        }
         
-        result = save_outfit(name, item_ids_list, description, tags_list)
-        return result
     except json.JSONDecodeError as e:
         raise HTTPException(status_code=400, detail=f"Invalid JSON format: {str(e)}")
     except HTTPException:
@@ -380,7 +406,7 @@ async def get_outfit_by_id(outfit_id: str):
     Get outfit information by ID, including populated item details.
     """
     try:
-        outfit = get_outfit_with_items(outfit_id)
+        outfit = await supabase_service.get_outfit_with_items(outfit_id)
         if outfit is None:
             raise HTTPException(status_code=404, detail="Outfit not found")
         return {"outfit": outfit}
@@ -390,58 +416,53 @@ async def get_outfit_by_id(outfit_id: str):
         logger.error(f"Error getting outfit {outfit_id}: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to get outfit: {str(e)}")
 
-@app.get("/outfit/{outfit_id}/info")
-async def get_outfit_info_endpoint(outfit_id: str):
-    """
-    Get basic outfit information by ID (without populated item details).
-    """
-    try:
-        outfit = get_outfit_info(outfit_id)
-        if outfit is None:
-            raise HTTPException(status_code=404, detail="Outfit not found")
-        return {"outfit": outfit}
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error getting outfit info {outfit_id}: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to get outfit info: {str(e)}")
-
 @app.get("/outfits")
-async def get_all_outfits_endpoint():
+async def get_all_outfits_endpoint(user_id: str = None):
     """
     Get all outfits with populated item details.
     """
+    if not user_id:
+        raise HTTPException(status_code=400, detail="user_id is required")
+    
     try:
-        outfits = get_all_outfits_with_items()
+        outfits = await supabase_service.get_user_outfits(user_id)
         return {"outfits": outfits, "count": len(outfits)}
     except Exception as e:
         logger.error(f"Error getting all outfits: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to get outfits: {str(e)}")
 
 @app.get("/outfits/basic")
-async def get_all_outfits_basic():
+async def get_all_outfits_basic(user_id: str = None):
     """
     Get all outfits without populated item details (faster).
     """
+    if not user_id:
+        raise HTTPException(status_code=400, detail="user_id is required")
+    
     try:
-        outfits = get_all_outfits()
+        # Get basic outfit info from Supabase
+        outfits_result = supabase_service.supabase.table("outfits").select("*").eq("user_id", user_id).execute()
+        outfits = outfits_result.data or []
         return {"outfits": outfits, "count": len(outfits)}
     except Exception as e:
         logger.error(f"Error getting all outfits basic: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to get outfits: {str(e)}")
 
 @app.get("/outfits/recent/{limit}")
-async def get_recent_outfits_endpoint(limit: int):
+async def get_recent_outfits_endpoint(limit: int, user_id: str = None):
     """
     Get the most recent outfits with populated item details.
     """
+    if not user_id:
+        raise HTTPException(status_code=400, detail="user_id is required")
+    
     try:
         if limit <= 0:
             raise HTTPException(status_code=400, detail="Limit must be positive")
         if limit > 100:
             raise HTTPException(status_code=400, detail="Limit cannot exceed 100")
         
-        outfits = get_recent_outfits(limit)
+        outfits = await supabase_service.get_recent_outfits(user_id, limit)
         return {"outfits": outfits, "count": len(outfits)}
     except HTTPException:
         raise
@@ -449,42 +470,13 @@ async def get_recent_outfits_endpoint(limit: int):
         logger.error(f"Error getting recent outfits: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to get recent outfits: {str(e)}")
 
-@app.get("/outfit-tags")
-async def get_outfit_tags():
-    """
-    Get all unique tags used in outfits.
-    """
-    try:
-        tags = get_all_outfit_tags()
-        return {"tags": tags, "count": len(tags)}
-    except Exception as e:
-        logger.error(f"Error getting outfit tags: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to get outfit tags: {str(e)}")
-
-@app.get("/outfits/tag/{tag}")
-async def get_outfits_by_tag_endpoint(tag: str):
-    """
-    Get all outfits that contain the specified tag.
-    """
-    try:
-        outfits = get_outfits_by_tag(tag)
-        return {"tag": tag, "outfits": outfits, "count": len(outfits)}
-    except Exception as e:
-        logger.error(f"Error getting outfits by tag {tag}: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to get outfits by tag: {str(e)}")
-
 @app.delete("/outfit/{outfit_id}")
 async def delete_outfit_endpoint(outfit_id: str):
     """
     Delete an outfit by ID.
     """
     try:
-        # Check if outfit exists first
-        outfit_info = get_outfit_info(outfit_id)
-        if outfit_info is None:
-            raise HTTPException(status_code=404, detail="Outfit not found")
-        
-        success = delete_outfit(outfit_id)
+        success = await supabase_service.delete_outfit(outfit_id)
         if not success:
             raise HTTPException(status_code=404, detail="Outfit not found")
         
@@ -495,8 +487,24 @@ async def delete_outfit_endpoint(outfit_id: str):
         logger.error(f"Error deleting outfit {outfit_id}: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to delete outfit: {str(e)}")
 
+@app.delete("/item/{item_id}")
+async def delete_item_endpoint(item_id: str):
+    """
+    Delete a clothing item by ID.
+    """
+    try:
+        success = await supabase_service.delete_item(item_id)
+        if not success:
+            raise HTTPException(status_code=404, detail="Item not found")
+        
+        return {"message": "Item deleted successfully", "id": item_id}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error deleting item {item_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to delete item: {str(e)}")
+
 # Error handlers
-# Converts errors to consistent JSON responses with the appropriate status code
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request, exc):
     return JSONResponse(
@@ -504,8 +512,6 @@ async def http_exception_handler(request, exc):
         content={"error": exc.detail}
     )
 
-# Returns a generic 500 Internal Server Error response to the clien
-# might no be needed but still good to have 
 @app.exception_handler(Exception)
 async def general_exception_handler(request, exc):
     logger.error(f"Unhandled exception: {exc}")
@@ -522,4 +528,4 @@ if __name__ == "__main__":
         port=8000,
         reload=True,
         log_level="info"
-    ) 
+    )

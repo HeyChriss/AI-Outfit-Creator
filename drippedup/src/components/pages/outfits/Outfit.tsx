@@ -21,7 +21,7 @@ import {
   useOutfitCreation,
 } from './hooks';
 import OutfitSaveModal from './OutfitSaveModal';
-import ItemDetailsModal from './ItemDetailsModal';
+import ItemDetailsModal from './itemDetailsModal';
 
 interface OutfitProps {
   onUploadClick: () => void;
@@ -269,6 +269,22 @@ const Outfit: React.FC<OutfitProps> = ({
     setSelectedItemForDetails(null);
   };
 
+  // Safe image URL getter with fallback
+  const getSafeImageUrl = (item: any): string => {
+    // Check multiple possible image properties
+    if (item?.image_url) {
+      return item.image_url;
+    }
+    if (item?.image) {
+      if (typeof item.image === 'string' && item.image.startsWith('http')) {
+        return item.image;
+      }
+      return getImageUrl(item.image);
+    }
+    // Fallback placeholder
+    return 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIGZpbGw9Im5vbmUiIHN0cm9rZT0iY3VycmVudENvbG9yIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgdmlld0JveD0iMCAwIDI0IDI0Ij48cGF0aCBkPSJtMyAzIDMgOSAxMy0xMHoiLz48cGF0aCBkPSJNNiAxMWgxMSIvPjwvc3ZnPg==';
+  };
+
   const renderItemImage = (item: any, size: string = '60px') => (
     <div style={{
       width: size,
@@ -282,8 +298,8 @@ const Outfit: React.FC<OutfitProps> = ({
       border: '1px solid #e2e8f0',
     }}>
       <img
-        src={getImageUrl(item.image)}
-        alt={item.details?.name || item.category}
+        src={getSafeImageUrl(item)}
+        alt={item?.details?.name || item?.category || 'Clothing item'}
         style={{
           width: '100%',
           height: '100%',
@@ -294,7 +310,7 @@ const Outfit: React.FC<OutfitProps> = ({
           target.style.display = 'none';
           const parent = target.parentElement;
           if (parent) {
-            parent.innerHTML = '<span style="font-size: 2rem;">👕</span>';
+            parent.innerHTML = '<span style="font-size: 2rem; color: #cbd5e1;">👕</span>';
           }
         }}
       />
@@ -594,6 +610,7 @@ const Outfit: React.FC<OutfitProps> = ({
                     fontSize: '0.875rem',
                     fontWeight: '600',
                     cursor: 'pointer',
+                    display: 'flex',
                     alignItems: 'center',
                     gap: '0.5rem',
                     transition: 'all 0.2s ease',
@@ -881,7 +898,7 @@ const Outfit: React.FC<OutfitProps> = ({
                                 top: '4px',
                                 right: '4px',
                                 width: '20px',
-                                height: '30px',
+                                height: '20px',
                                 borderRadius: '50%',
                                 border: 'none',
                                 backgroundColor: '#dc2626',
@@ -1159,11 +1176,10 @@ const Outfit: React.FC<OutfitProps> = ({
             }}>
               Release to add item to your manual outfit!
             </div>
-                     )}
+          )}
          </div>
         )}
       </div>
-      {/* <Footer />  */}
       
       {/* AI Outfit Save Modal */}
       {selectedItem && (
@@ -1174,7 +1190,7 @@ const Outfit: React.FC<OutfitProps> = ({
           selectedItems={filteredMatchResults.map(result => result.item)}
           selectedItem={selectedItem}
           isSaving={isSaving}
-          getImageUrl={getImageUrl}
+          getImageUrl={getSafeImageUrl}
         />
       )}
 
@@ -1187,7 +1203,7 @@ const Outfit: React.FC<OutfitProps> = ({
           selectedItems={manualOutfitItems.slice(1)} // Exclude first item to avoid duplication
           selectedItem={manualOutfitItems[0]} // Use first item as selectedItem
           isSaving={isSaving}
-                    getImageUrl={getImageUrl}
+          getImageUrl={getSafeImageUrl}
         />
       )}
 
@@ -1320,7 +1336,7 @@ const Outfit: React.FC<OutfitProps> = ({
           isOpen={showItemDetailsModal}
           onClose={handleCloseItemDetailsModal}
           item={selectedItemForDetails}
-          getImageUrl={getImageUrl}
+          getImageUrl={getSafeImageUrl}
         />
       )}
 
@@ -1335,4 +1351,4 @@ const Outfit: React.FC<OutfitProps> = ({
   );
 };
 
-export default Outfit; 
+export default Outfit;

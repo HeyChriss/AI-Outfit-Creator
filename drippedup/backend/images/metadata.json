@@ -102,5 +102,70 @@
       "notes": ""
     },
     "timestamp": "2025-07-14T04:17:28.437873Z"
+  },
+  {
+    "id": "3eab6bd2-07b2-4e17-82f6-5c82e2739385",
+    "category": "Outwear",
+    "image": "Outwear\\3eab6bd2-07b2-4e17-82f6-5c82e2739385.jpg",
+    "details": {
+      "name": "",
+      "category": "Outwear",
+      "color": "",
+      "brand": "",
+      "notes": ""
+    },
+    "timestamp": "2025-07-15T05:21:54.014462Z"
+  },
+  {
+    "id": "fcbcc89c-1ad8-49f1-9340-ec38fde57493",
+    "category": "Outwear",
+    "image": "Outwear\\fcbcc89c-1ad8-49f1-9340-ec38fde57493.jpg",
+    "details": {
+      "name": "",
+      "category": "Outwear",
+      "color": "",
+      "brand": "",
+      "notes": ""
+    },
+    "timestamp": "2025-07-16T02:16:15.362428Z"
+  },
+  {
+    "id": "0d8c5806-d1af-4afe-9ea0-d6fa6f547e5a",
+    "category": "Outwear",
+    "image": "Outwear\\0d8c5806-d1af-4afe-9ea0-d6fa6f547e5a.jpg",
+    "details": {
+      "name": "",
+      "category": "Outwear",
+      "color": "",
+      "brand": "",
+      "notes": ""
+    },
+    "timestamp": "2025-07-16T02:25:16.498088Z"
+  },
+  {
+    "id": "ccc3ea31-d5a1-4390-98c4-e793718a1ee6",
+    "category": "Pants",
+    "image": "Pants\\ccc3ea31-d5a1-4390-98c4-e793718a1ee6.jpg",
+    "details": {
+      "name": "",
+      "category": "Pants",
+      "color": "",
+      "brand": "",
+      "notes": ""
+    },
+    "timestamp": "2025-07-16T04:27:15.676421Z"
+  },
+  {
+    "id": "fb55ee5f-3fd6-4145-86e2-0da14f361f3f",
+    "category": "Pants",
+    "image": "Pants\\fb55ee5f-3fd6-4145-86e2-0da14f361f3f.jpg",
+    "details": {
+      "name": "",
+      "category": "Pants",
+      "color": "",
+      "brand": "",
+      "notes": ""
+    },
+    "timestamp": "2025-07-16T05:02:03.629012Z"
   }
 ]

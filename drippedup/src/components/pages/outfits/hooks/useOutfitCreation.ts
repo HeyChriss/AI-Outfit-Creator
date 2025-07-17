@@ -1,4 +1,6 @@
+// src/components/pages/outfits/hooks/useOutfitCreation.ts - FIXED
 import { useState } from 'react';
+import { useAuth } from '../../../../contexts/AuthContext'; // Import useAuth
 import config from '../../../../config';
 
 interface ClothingItem {
@@ -17,23 +19,30 @@ interface OutfitData {
 
 interface SaveOutfitResponse {
   message: string;
-  id: string;
-  name: string;
-  item_ids: string[];
-  description: string;
-  tags: string[];
-  metadata_file: string;
+  outfit: {
+    id: string;
+    name: string;
+    item_ids: string[];
+    description: string;
+    tags: string[];
+  };
 }
 
 export const useOutfitCreation = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [savedOutfit, setSavedOutfit] = useState<SaveOutfitResponse | null>(null);
+  const { user } = useAuth(); // Get current user
 
   const saveOutfit = async (
     selectedItems: ClothingItem[],
     outfitData: OutfitData
   ): Promise<boolean> => {
+    if (!user?.id) {
+      setSaveError('You must be logged in to save outfits');
+      return false;
+    }
+
     setIsSaving(true);
     setSaveError(null);
     
@@ -43,6 +52,15 @@ export const useOutfitCreation = () => {
       formData.append('item_ids', JSON.stringify(selectedItems.map(item => item.id)));
       formData.append('description', outfitData.description);
       formData.append('tags', JSON.stringify(outfitData.tags));
+      formData.append('user_id', user.id); // Add user_id here!
+
+      console.log('Saving outfit with data:', {
+        name: outfitData.name,
+        item_ids: JSON.stringify(selectedItems.map(item => item.id)),
+        description: outfitData.description,
+        tags: JSON.stringify(outfitData.tags),
+        user_id: user.id
+      });
 
       const response = await fetch(`${config.API_BASE_URL}/outfit`, {
         method: 'POST',
@@ -78,4 +96,4 @@ export const useOutfitCreation = () => {
     saveOutfit,
     clearSaveState,
   };
-}; 
+};
