@@ -13,7 +13,7 @@ import LandingPage from './components/layout/LandingPage'
 import Dashboard from './components/pages/Dashboard'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import ProtectedRoute from './components/ProtectedRoute'
-import LoadingSpinner from './components/loadingSpinner'
+import LoadingSpinner from './components/LoadingSpinner'
 
 type AuthView = 'login' | 'signup' | null;
 type CurrentView = 'landing' | 'dashboard' | 'newItem' | 'aboutUs' | 'outfits' | 'wardrobe';

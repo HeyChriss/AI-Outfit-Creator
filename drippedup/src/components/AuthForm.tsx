@@ -1,7 +1,7 @@
 // src/components/AuthForm.tsx - Fixed error handling
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import LoadingSpinner from './loadingSpinner';
+import LoadingSpinner from './LoadingSpinner';
 
 const AuthForm: React.FC = () => {
   const [isLogin, setIsLogin] = useState(true);
