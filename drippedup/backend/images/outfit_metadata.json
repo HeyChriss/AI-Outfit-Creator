@@ -1,0 +1,44 @@
+[
+  {
+    "id": "21f2f7ec-96ac-4ff1-91a4-512a6c5b5296",
+    "name": "Summer Casual Outfit 👕🌴☀️",
+    "item_ids": [
+      "5b4325f7-6d25-4b14-ae49-16fd4a9fd675",
+      "9b793608-2193-449f-96a0-4b880a99d63d"
+    ],
+    "description": "This is something I could wear in the summer",
+    "tags": [
+      "Summer"
+    ],
+    "created_at": "2025-07-16T04:18:28.495925Z"
+  },
+  {
+    "id": "b8eb1f79-b5c1-45ba-8097-99b0c3a7c339",
+    "name": "Street Outfit",
+    "item_ids": [
+      "b1988630-a0da-4039-8bf5-50bc44242c4f",
+      "46b95418-5cf8-499f-bce3-6fff9f2318c7"
+    ],
+    "description": "This is something for the street",
+    "tags": [
+      "Street",
+      "Casual"
+    ],
+    "created_at": "2025-07-16T04:38:03.006062Z"
+  },
+  {
+    "id": "221bbadf-db46-4988-9f8f-67198c65e7e7",
+    "name": "Christmas Outfit",
+    "item_ids": [
+      "aed95788-6adc-45d1-9f90-facde6a20512",
+      "83fcc4bd-7cfe-41b0-9f23-281070b7039e",
+      "46b95418-5cf8-499f-bce3-6fff9f2318c7"
+    ],
+    "description": "Merry christmas",
+    "tags": [
+      "Holiday",
+      "Christmas"
+    ],
+    "created_at": "2025-07-16T04:39:30.542268Z"
+  }
+]

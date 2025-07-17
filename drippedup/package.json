@@ -10,14 +10,22 @@
     "preview": "vite preview"
   },
   "dependencies": {
+<<<<<<< HEAD
     "@supabase/supabase-js": "^2.51.0",
     "fastapi": "^0.0.8",
+=======
+    "@supabase/supabase-js": "^2.50.0",
+>>>>>>> 5730abaf8b68f3794e46d984e713d0fb837cc5f4
     "lucide-react": "^0.513.0",
     "postgres": "^3.4.5",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
+<<<<<<< HEAD
     "react-icons": "^5.5.0",
     "torch": "^0.2.7"
+=======
+    "react-icons": "^5.5.0"
+>>>>>>> 5730abaf8b68f3794e46d984e713d0fb837cc5f4
   },
   "devDependencies": {
     "@eslint/js": "^9.25.0",

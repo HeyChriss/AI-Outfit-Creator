@@ -6,7 +6,10 @@ interface ClothingItem {
   id: string;
   category: string;
   image: string;
+<<<<<<< HEAD
   image_url?: string;
+=======
+>>>>>>> 5730abaf8b68f3794e46d984e713d0fb837cc5f4
   details: any;
   timestamp: string;
 }
@@ -24,7 +27,10 @@ interface ItemDetails {
   image: string;
   details: any;
   timestamp: string;
+<<<<<<< HEAD
   image_url?: string;
+=======
+>>>>>>> 5730abaf8b68f3794e46d984e713d0fb837cc5f4
   brand?: string;
   color?: string;
   occasion?: string;
@@ -231,6 +237,7 @@ const ItemDetailsModal: React.FC<ItemDetailsModalProps> = ({
                 boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05)',
               }}>
                 <img
+<<<<<<< HEAD
                     // Replace the src attribute with this new logic
                     src={itemDetails.image_url || getImageUrl(itemDetails.image)}
                     alt={itemDetails.details?.name || itemDetails.category}
@@ -247,6 +254,23 @@ const ItemDetailsModal: React.FC<ItemDetailsModalProps> = ({
                         parent.innerHTML = '<span style="font-size: 4rem; color: #cbd5e1;">👕</span>';
                         }
                     }}
+=======
+                  src={getImageUrl(itemDetails.image)}
+                  alt={itemDetails.details?.name || itemDetails.category}
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                  }}
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.style.display = 'none';
+                    const parent = target.parentElement;
+                    if (parent) {
+                      parent.innerHTML = '<span style="font-size: 4rem; color: #cbd5e1;">👕</span>';
+                    }
+                  }}
+>>>>>>> 5730abaf8b68f3794e46d984e713d0fb837cc5f4
                 />
               </div>
             </div>

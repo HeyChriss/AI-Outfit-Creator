@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 // src/App.tsx - Updated with AuthProvider and Supabase integration
+=======
+// src/App.tsx - Updated with About Us page
+>>>>>>> 5730abaf8b68f3794e46d984e713d0fb837cc5f4
 import React, { useState } from 'react'
 import './App.css'
 import Footer from './components/layout/Footer'
@@ -11,15 +15,23 @@ import LoginPage from './components/auth/LoginPage'
 import SignUpPage from './components/auth/SignUpPage'
 import LandingPage from './components/layout/LandingPage'
 import Dashboard from './components/pages/Dashboard'
+<<<<<<< HEAD
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import ProtectedRoute from './components/ProtectedRoute'
 import LoadingSpinner from './components/loadingSpinner'
+=======
+import { useAuth } from './contexts/AuthContext'
+>>>>>>> 5730abaf8b68f3794e46d984e713d0fb837cc5f4
 
 type AuthView = 'login' | 'signup' | null;
 type CurrentView = 'landing' | 'dashboard' | 'newItem' | 'aboutUs' | 'outfits' | 'wardrobe';
 
+<<<<<<< HEAD
 // Main App Component (wrapped by AuthProvider)
 function AppContent() {
+=======
+function App() {
+>>>>>>> 5730abaf8b68f3794e46d984e713d0fb837cc5f4
   const [currentView, setCurrentView] = useState<CurrentView>('landing')
   const [authView, setAuthView] = useState<AuthView>(null)
   const { user, loading } = useAuth()
@@ -45,7 +57,20 @@ function AppContent() {
         fontSize: '18px'
       }}>
         <div style={{ textAlign: 'center' }}>
+<<<<<<< HEAD
           <LoadingSpinner text="Loading DrippedUp..." />
+=======
+          <div style={{ 
+            width: '50px', 
+            height: '50px', 
+            border: '3px solid rgba(255,255,255,0.3)', 
+            borderTop: '3px solid white', 
+            borderRadius: '50%', 
+            animation: 'spin 1s linear infinite',
+            margin: '0 auto 20px'
+          }}></div>
+          Loading DrippedUp...
+>>>>>>> 5730abaf8b68f3794e46d984e713d0fb837cc5f4
         </div>
       </div>
     )
@@ -118,6 +143,7 @@ function AppContent() {
     );
   }
 
+<<<<<<< HEAD
   if (currentView === 'dashboard') {
     return (
       <ProtectedRoute>
@@ -148,6 +174,8 @@ function AppContent() {
   }
 
   // Public routes - accessible without authentication
+=======
+>>>>>>> 5730abaf8b68f3794e46d984e713d0fb837cc5f4
   if (currentView === 'aboutUs') {
     return (
       <AboutUs 
@@ -191,14 +219,22 @@ function AppContent() {
     );
   }
 
+<<<<<<< HEAD
   // Show dashboard for authenticated users (fallback)
+=======
+  // Show dashboard for authenticated users
+>>>>>>> 5730abaf8b68f3794e46d984e713d0fb837cc5f4
   return (
     <>
       <Header 
         onLoginClick={() => setAuthView('login')}
         onAboutUsClick={() => setCurrentView('aboutUs')}
         onLogoClick={() => setCurrentView('landing')}
+<<<<<<< HEAD
         onOutfitClick={() => setCurrentView('outfits')}
+=======
+        onOutfitClick={() => setCurrentView('outfits')} // Navigate to outfits for authenticated users
+>>>>>>> 5730abaf8b68f3794e46d984e713d0fb837cc5f4
         onWardrobeClick={() => setCurrentView('wardrobe')}
       />
       <main
@@ -225,6 +261,7 @@ function AppContent() {
         }
       `}</style>
     </>
+<<<<<<< HEAD
   );
 }
 
@@ -235,6 +272,9 @@ function App() {
       <AppContent />
     </AuthProvider>
   );
+=======
+  )
+>>>>>>> 5730abaf8b68f3794e46d984e713d0fb837cc5f4
 }
 
 export default App

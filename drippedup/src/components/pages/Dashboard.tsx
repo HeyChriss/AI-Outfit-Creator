@@ -4,6 +4,10 @@ import {
   Shirt, 
   TrendingUp, 
   Clock, 
+<<<<<<< HEAD
+=======
+  Star, 
+>>>>>>> 5730abaf8b68f3794e46d984e713d0fb837cc5f4
   Grid3X3,
   Sparkles,
   Calendar,
@@ -29,7 +33,10 @@ interface RecentUpload {
     image: string;
     details: any;
     timestamp: string;
+<<<<<<< HEAD
     image_url?: string; // For Supabase items
+=======
+>>>>>>> 5730abaf8b68f3794e46d984e713d0fb837cc5f4
   };
 }
 
@@ -37,7 +44,10 @@ interface OutfitItem {
   id: string;
   category: string;
   image: string;
+<<<<<<< HEAD
   image_url?: string; // For Supabase items
+=======
+>>>>>>> 5730abaf8b68f3794e46d984e713d0fb837cc5f4
   details: any;
   timestamp: string;
 }
@@ -57,6 +67,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onUploadClick, onOutfitClick, onW
     width: typeof window !== 'undefined' ? window.innerWidth : 1200,
     height: typeof window !== 'undefined' ? window.innerHeight : 800
   });
+<<<<<<< HEAD
   
   // Combined state - keeping both sets of features
   const [recentUploads, setRecentUploads] = useState<RecentUpload[]>([]);
@@ -65,6 +76,13 @@ const Dashboard: React.FC<DashboardProps> = ({ onUploadClick, onOutfitClick, onW
   const [error, setError] = useState<string | null>(null);
   const [recentOutfits, setRecentOutfits] = useState<RecentOutfit[]>([]);
   const [outfitsLoading, setOutfitsLoading] = useState(true);
+=======
+  const [recentUploads, setRecentUploads] = useState<RecentUpload[]>([]); // stores an array of recent uploads
+  const [loading, setLoading] = useState(true); // loading state when fetching recent uploads
+  const [outfitsCount, setOutfitsCount] = useState(0); // stores the actual number of outfits created
+  const [recentOutfits, setRecentOutfits] = useState<RecentOutfit[]>([]); // stores recent outfits
+  const [outfitsLoading, setOutfitsLoading] = useState(true); // loading state for outfits
+>>>>>>> 5730abaf8b68f3794e46d984e713d0fb837cc5f4
   
   // Modal state for item details
   const [showItemDetailsModal, setShowItemDetailsModal] = useState(false);
@@ -82,6 +100,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onUploadClick, onOutfitClick, onW
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+<<<<<<< HEAD
   const fetchRecentUploads = async () => {
     if (!user?.id) {
       console.log('No user ID available for fetching recent uploads');
@@ -178,6 +197,65 @@ const Dashboard: React.FC<DashboardProps> = ({ onUploadClick, onOutfitClick, onW
 
     fetchData();
   }, [user?.id]);
+=======
+  useEffect(() => {
+    const fetchRecentUploads = async () => { // fetches recent uploads from the backend
+      try {
+        const response = await fetch(`${config.API_BASE_URL}/recent-uploads`); // fetches recent uploads from the backend
+        if (response.ok) {
+          const data = await response.json(); // parses the response as JSON
+          setRecentUploads(data.recent_uploads || []); // sets the recent uploads to the data
+        } else {
+          console.error('Failed to fetch recent uploads');
+        }
+      } catch (error) {
+        console.error('Error fetching recent uploads:', error);
+      } finally {
+        setLoading(false); // sets loading to false because the recent uploads have been fetched
+      }
+    };
+
+    fetchRecentUploads();
+  }, []);
+
+  useEffect(() => {
+    const fetchOutfitsCount = async () => { // fetches the actual number of outfits from the backend
+      try {
+        const response = await fetch(`${config.API_BASE_URL}/outfits/basic`); // fetches outfits from the backend
+        if (response.ok) {
+          const data = await response.json(); // parses the response as JSON
+          setOutfitsCount(data.count || 0); // sets the outfits count from the API response
+        } else {
+          console.error('Failed to fetch outfits count');
+        }
+      } catch (error) {
+        console.error('Error fetching outfits count:', error);
+      }
+    };
+
+    fetchOutfitsCount();
+  }, []);
+
+  useEffect(() => {
+    const fetchRecentOutfits = async () => { // fetches recent outfits from the backend
+      try {
+        const response = await fetch(`${config.API_BASE_URL}/outfits/recent/3`); // fetches 3 recent outfits
+        if (response.ok) {
+          const data = await response.json(); // parses the response as JSON
+          setRecentOutfits(data.outfits || []); // sets the recent outfits
+        } else {
+          console.error('Failed to fetch recent outfits');
+        }
+      } catch (error) {
+        console.error('Error fetching recent outfits:', error);
+      } finally {
+        setOutfitsLoading(false); // sets loading to false
+      }
+    };
+
+    fetchRecentOutfits();
+  }, []);
+>>>>>>> 5730abaf8b68f3794e46d984e713d0fb837cc5f4
 
   const isMobile = screenSize.width < 768;
   const isTablet = screenSize.width >= 768 && screenSize.width < 1024;
@@ -196,6 +274,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onUploadClick, onOutfitClick, onW
     return `${diffInDays} days ago`;
   };
 
+<<<<<<< HEAD
   // Helper function to get image URL for modal (takes string path)
   const getImageUrlForModal = (imagePath: string) => {
     // Check if it's already a full URL
@@ -237,6 +316,46 @@ const Dashboard: React.FC<DashboardProps> = ({ onUploadClick, onOutfitClick, onW
     } catch (error) {
       console.error('Error refreshing data:', error);
       setError('Failed to refresh data');
+=======
+  // Helper function to get image URL
+  const getImageUrl = (imagePath: string) => {
+    return `${config.API_BASE_URL}/images/${imagePath}`;
+  };
+
+  // Function to refresh recent uploads, outfits count, and recent outfits if the user clicks the refresh button
+  const refreshRecentUploads = async () => {
+    setLoading(true);
+    setOutfitsLoading(true);
+    try {
+      // Fetch recent uploads
+      const uploadsResponse = await fetch(`${config.API_BASE_URL}/recent-uploads`);
+      if (uploadsResponse.ok) {
+        const uploadsData = await uploadsResponse.json();
+        setRecentUploads(uploadsData.recent_uploads || []);
+      } else {
+        console.error('Failed to fetch recent uploads');
+      }
+
+      // Fetch outfits count
+      const outfitsResponse = await fetch(`${config.API_BASE_URL}/outfits/basic`);
+      if (outfitsResponse.ok) {
+        const outfitsData = await outfitsResponse.json();
+        setOutfitsCount(outfitsData.count || 0);
+      } else {
+        console.error('Failed to fetch outfits count');
+      }
+
+      // Fetch recent outfits
+      const recentOutfitsResponse = await fetch(`${config.API_BASE_URL}/outfits/recent/3`);
+      if (recentOutfitsResponse.ok) {
+        const recentOutfitsData = await recentOutfitsResponse.json();
+        setRecentOutfits(recentOutfitsData.outfits || []);
+      } else {
+        console.error('Failed to fetch recent outfits');
+      }
+    } catch (error) {
+      console.error('Error fetching data:', error);
+>>>>>>> 5730abaf8b68f3794e46d984e713d0fb837cc5f4
     } finally {
       setLoading(false);
       setOutfitsLoading(false);
@@ -252,6 +371,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onUploadClick, onOutfitClick, onW
     });
   };
 
+<<<<<<< HEAD
   // Helper function to open item details modal
   const handleItemDetailsClick = (upload: RecentUpload) => {
     setSelectedItemForDetails(upload);
@@ -264,6 +384,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onUploadClick, onOutfitClick, onW
     setSelectedItemForDetails(null);
   };
 
+=======
+>>>>>>> 5730abaf8b68f3794e46d984e713d0fb837cc5f4
   const stats = {
     totalItems: recentUploads.length || 0,
     outfitsCreated: outfitsCount,
@@ -518,6 +640,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onUploadClick, onOutfitClick, onW
       marginBottom: '1rem',
       opacity: 0.5,
     },
+<<<<<<< HEAD
     errorMessage: {
       background: '#fee2e2',
       border: '1px solid #fecaca',
@@ -552,6 +675,21 @@ const Dashboard: React.FC<DashboardProps> = ({ onUploadClick, onOutfitClick, onW
       </div>
     );
   }
+=======
+  };
+
+  // Helper function to open item details modal
+  const handleItemDetailsClick = (upload: RecentUpload) => {
+    setSelectedItemForDetails(upload);
+    setShowItemDetailsModal(true);
+  };
+
+  // Helper function to close item details modal
+  const handleCloseItemDetailsModal = () => {
+    setShowItemDetailsModal(false);
+    setSelectedItemForDetails(null);
+  };
+>>>>>>> 5730abaf8b68f3794e46d984e713d0fb837cc5f4
 
   return (
     <div style={styles.container}>
@@ -600,6 +738,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onUploadClick, onOutfitClick, onW
         </div>
       </div>
 
+<<<<<<< HEAD
       {/* Error Message */}
       {error && (
         <div style={styles.errorMessage}>
@@ -607,6 +746,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onUploadClick, onOutfitClick, onW
         </div>
       )}
 
+=======
+>>>>>>> 5730abaf8b68f3794e46d984e713d0fb837cc5f4
       {/* Main Content Grid */}
       <div style={styles.gridContainer}>
         {/* Recent Uploads */}
@@ -674,7 +815,11 @@ const Dashboard: React.FC<DashboardProps> = ({ onUploadClick, onOutfitClick, onW
                     border: '1px solid #e2e8f0',
                   }}>
                     <img 
+<<<<<<< HEAD
                       src={getImageUrl(upload)}
+=======
+                      src={getImageUrl(upload.item_info.image)}
+>>>>>>> 5730abaf8b68f3794e46d984e713d0fb837cc5f4
                       alt={upload.item_info.details?.name || upload.item_info.category}
                       style={{
                         width: '100%',
@@ -819,7 +964,11 @@ const Dashboard: React.FC<DashboardProps> = ({ onUploadClick, onOutfitClick, onW
                         }}
                       >
                         <img
+<<<<<<< HEAD
                           src={item.image_url || `${config.API_BASE_URL}/images/${item.image}`}
+=======
+                          src={getImageUrl(item.image)}
+>>>>>>> 5730abaf8b68f3794e46d984e713d0fb837cc5f4
                           alt={item.details?.name || item.category}
                           style={{
                             width: '100%',
@@ -997,6 +1146,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onUploadClick, onOutfitClick, onW
         </div>
       </div>
 
+<<<<<<< HEAD
       {/* Item Details Modal */}
       {selectedItemForDetails && (
         <ItemDetailsModal
@@ -1006,6 +1156,17 @@ const Dashboard: React.FC<DashboardProps> = ({ onUploadClick, onOutfitClick, onW
           getImageUrl={getImageUrlForModal}
         />
       )}
+=======
+             {/* Item Details Modal */}
+       {selectedItemForDetails && (
+         <ItemDetailsModal
+           isOpen={showItemDetailsModal}
+           onClose={handleCloseItemDetailsModal}
+           item={selectedItemForDetails.item_info}
+           getImageUrl={getImageUrl}
+         />
+       )}
+>>>>>>> 5730abaf8b68f3794e46d984e713d0fb837cc5f4
     </div>
   );
 };
